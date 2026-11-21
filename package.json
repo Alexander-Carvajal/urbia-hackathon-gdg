@@ -9,7 +9,9 @@
     "build:single": "tsc -b && vite build --mode single",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "seed:sql": "node scripts/gen-seed.mjs"
+    "seed:sql": "node scripts/gen-seed.mjs",
+    "api": "node server/index.mjs",
+    "test:api": "node --test server/*.test.mjs"
   },
   "dependencies": {
     "@react-leaflet/core": "^3.0.0",
