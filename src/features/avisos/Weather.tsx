@@ -35,20 +35,15 @@ export function WeatherCard() {
   const w = useWeather()
   const { rain } = useAvisos()
   return (
-    <section className="card flex items-center gap-3 px-4 py-4" aria-label="Clima en Cancún">
-      {w ? <WeatherIcon code={w.current.code} isDay={w.current.isDay} size={44} /> : <span className="h-11 w-11 animate-pulse rounded-full bg-soft" />}
-      <div className="min-w-0 flex-1">
-        <p className="whitespace-nowrap text-[13px] text-muted">Clima en Cancún</p>
-        <p className="font-display text-[28px] font-extrabold leading-none">{w ? `${Math.round(w.current.temp)}°C` : '—'}</p>
-        <p className="mt-1.5 whitespace-nowrap text-[12px] text-muted">
-          {w ? <>{weatherLabel(w.current.code)} · {w.current.time.slice(11, 16)} h</> : rain.status === 'error' ? 'Sin datos de clima' : 'Cargando…'}
-        </p>
+    <section className="card dashboard-weather" aria-label="Clima en Cancún">
+      {w ? <WeatherIcon code={w.current.code} isDay={w.current.isDay} size={38} /> : <span className="h-9 w-9 animate-pulse rounded-full bg-soft" />}
+      <div>
+        <p className="text-xs text-muted">Clima en Cancún</p>
+        <strong className="block font-display text-2xl leading-none">{w ? `${Math.round(w.current.temp)}°C` : '—'}</strong>
+        <p className="text-xs text-muted">{w ? `${weatherLabel(w.current.code)} · ${w.current.time.slice(11, 16)} h` : rain.status === 'error' ? 'Sin datos de clima' : 'Cargando…'}</p>
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-0.5 border-l border-line pl-3">
-        <p className="flex items-center gap-1 font-display text-[20px] font-extrabold"><Droplet size={16} className="text-primary" aria-hidden="true" />{w ? `${w.probSoon}%` : '—'}</p>
-        <p className="whitespace-nowrap text-[12px] text-muted">prob. de lluvia</p>
-        <Link to="/mapa?capa=temperatura" className="mt-1 flex items-center gap-1 whitespace-nowrap text-[13px] font-semibold text-primary-strong hover:underline">Ver en el mapa <ArrowRight size={14} aria-hidden="true" /></Link>
-      </div>
+      <div className="weather-rain"><Droplet size={18} aria-hidden="true" /><strong>{w ? `${w.probSoon}%` : '—'}</strong><span className="text-xs text-muted">lluvia</span></div>
+      <Link to="/mapa?capa=temperatura" className="flex items-center gap-1 text-xs font-semibold text-primary-strong">Ver en el mapa <ArrowRight size={14} aria-hidden="true" /></Link>
     </section>
   )
 }

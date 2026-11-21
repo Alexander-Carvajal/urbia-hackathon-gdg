@@ -34,12 +34,13 @@ export function HeatLegend({ layer, temp, tempMode, count }: { layer: HeatLayer;
 }
 
 /** Menú del botón de capas del mapa: mapa de calor + avisos oficiales. */
-export function MapLayersMenu({ heat, onHeat, tempMode, onTempMode, avisos, onAvisos, avisosCount }: {
+export function MapLayersMenu({ heat, onHeat, tempMode, onTempMode, avisos, onAvisos, avisosCount, toolbar = false }: {
+  toolbar?: boolean
   heat: HeatLayer; onHeat: (l: HeatLayer) => void; tempMode: TempMode; onTempMode: (m: TempMode) => void
   avisos: boolean; onAvisos: (v: boolean) => void; avisosCount: number
 }) {
   return (
-    <PopoverButton label="Capas del mapa">
+    <PopoverButton label={toolbar ? 'Más filtros' : 'Capas del mapa'} icon={toolbar ? 'filters' : 'layers'} variant={toolbar ? 'chip' : 'map'}>
       <p className="mb-1 px-1 text-xs font-bold uppercase tracking-wide text-muted">Mapa de calor</p>
       <div role="menu" aria-label="Mapa de calor" className="flex flex-col gap-0.5">
         <MenuOption checked={heat === 'ninguna'} onClick={() => onHeat('ninguna')}>Sin mapa de calor</MenuOption>

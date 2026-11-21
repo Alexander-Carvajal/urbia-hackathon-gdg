@@ -1,3 +1,6 @@
+import { plural } from '../../lib/format'
+import { useMap } from 'react-leaflet'
+import { WaterloggingLayer, WaterloggingSymbol, waterloggingPoints } from '../../components/map/WaterloggingLayer'
 import { Layers, Search, SearchX, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -15,6 +18,14 @@ import type { CategoryId, Status } from '../../types'
 
 type StatusFilter = 'activos' | 'todos' | Status
 
+function SearchExtent({ locations }: { locations: { lat: number; lng: number }[] }) {
+  const map = useMap()
+  useEffect(() => {
+    if (locations.length) map.fitBounds(locations.map(p => [p.lat, p.lng]), { padding: [40, 40], maxZoom: 16 })
+  }, [locations, map])
+  return null
+}
+
 export function MapPage() {
   const { reports } = useReports()
   const [params, setParams] = useSearchParams()
@@ -24,6 +35,8 @@ export function MapPage() {
   const [applied, setApplied] = useState(params.get('q') ?? '')
   const [fly, setFly] = useState<FlyTarget | null>(null)
   const [showAvisos, setShowAvisos] = useState(true)
+  const [showWaterlogging, setShowWaterlogging] = useState(true)
+  const focusPoint = params.get('encharcamiento')
   const [inView, setInView] = useState<number | null>(null)
   const avisos = useMappableAvisos(30)
   // La capa vive en la URL (?capa=densidad|temperatura) para poder compartir el enlace
@@ -43,17 +56,14 @@ export function MapPage() {
   const byStatus = useMemo(() => reports.filter((r) =>
     status === 'todos' ? true : status === 'activos' ? r.status !== 'resuelto' && r.status !== 'descartado' : r.status === status), [reports, status])
   const search = useMemo(() => searchPlaces(applied, byStatus), [applied, byStatus])
-  // Si la búsqueda coincide con una zona, centramos el mapa y mostramos todo; si coincide con reportes, filtramos.
-  const base = applied && !search.zone ? search.reports : byStatus
-  const visible = useMemo(() => base.filter((r) => cats.includes(r.category)), [base, cats])
-  const noResults = !!applied && !search.zone && search.reports.length === 0
-
-  useEffect(() => {
-    if (!applied) return
-    if (search.zone) setFly({ lat: search.zone.lat, lng: search.zone.lng, zoom: 15, key: Date.now() })
-    else if (search.reports[0]) setFly({ lat: search.reports[0].lat, lng: search.reports[0].lng, zoom: 15, key: Date.now() })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applied])
+  const visible = useMemo(() => search.reports.filter(r => cats.includes(r.category)), [search, cats])
+  const inventoryVisible = showWaterlogging && cats.includes('inundacion')
+  const locations = useMemo(() => {
+    if (!applied) return []
+    const matches = [...visible, ...(inventoryVisible ? search.points : [])]
+    return matches.length ? matches : search.zone ? [search.zone] : []
+  }, [applied, visible, inventoryVisible, search])
+  const noResults = locations.length === 0
 
   // Al llegar con ?sel= (o desde «Reportes relacionados») centramos el reporte
   useEffect(() => {
@@ -62,13 +72,13 @@ export function MapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sel])
 
-  const submit = (e: FormEvent) => { e.preventDefault(); setApplied(q.trim()); setParams((p) => { const n = new URLSearchParams(p); if (q.trim()) n.set('q', q.trim()); else n.delete('q'); return n }, { replace: true }) }
+  const submit = (e: FormEvent) => { e.preventDefault(); setApplied(q.trim()); setParams((p) => { const n = new URLSearchParams(p); n.delete('sel'); n.delete('encharcamiento'); if (q.trim()) n.set('q', q.trim()); else n.delete('q'); return n }, { replace: true }) }
   const clear = () => { setQ(''); setApplied(''); setParams((p) => { const n = new URLSearchParams(p); n.delete('q'); return n }, { replace: true }) }
   const selected = sel ? reports.find((r) => r.id === sel) : undefined
   const filtersOn = status !== 'activos' || heat !== 'ninguna' || !showAvisos
 
   return (
-    <div className="flex flex-1 flex-col gap-4 px-4 pt-4 md:px-8 md:pt-6">
+    <div className="map-dashboard">
       <div>
         <h1 className="text-[26px] font-extrabold leading-tight md:text-[32px]">Mapa de incidencias</h1>
         <p className="mt-1 text-[15px] text-muted">Explora reportes cercanos y conoce qué está ocurriendo en Cancún.</p>
@@ -78,8 +88,8 @@ export function MapPage() {
         <WeatherStrip />
         <form role="search" onSubmit={submit} className="relative self-center">
           <label htmlFor="map-search" className="sr-only">Buscar zona, colonia o referencia</label>
-          <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
-          <input id="map-search" value={q} onChange={(e) => setQ(e.target.value)} className="input !min-h-12 !pl-11 !pr-11" placeholder="Buscar colonia, avenida o reporte…" />
+          <button type="submit" aria-label="Buscar en el mapa" className="absolute inset-y-0 left-0 grid w-11 place-items-center text-primary-strong"><Search size={18} /></button>
+          <input id="map-search" value={q} onChange={(e) => setQ(e.target.value)} className="input !min-h-12 !pl-11 !pr-11" placeholder="Región, calle o nombre…" />
           {q && <button type="button" onClick={clear} className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg hover:bg-soft" aria-label="Limpiar búsqueda"><X size={16} /></button>}
         </form>
       </div>
@@ -102,6 +112,10 @@ export function MapPage() {
           <p className="mb-1 mt-3 px-1 text-xs font-bold uppercase tracking-wide text-muted">Otras capas</p>
           <MenuOption kind="check" checked={showAvisos} onClick={() => setShowAvisos(!showAvisos)}>Avisos oficiales <span className="ml-auto text-xs text-muted">{avisos.length}</span></MenuOption>
         </PopoverButton>
+        <button className="chip" aria-pressed={showWaterlogging && cats.includes('inundacion')} onClick={() => {
+          if (!cats.includes('inundacion')) { setCats([...cats, 'inundacion']); setShowWaterlogging(true) }
+          else setShowWaterlogging(!showWaterlogging)
+        }}><WaterloggingSymbol />Inventario de encharcamientos · {waterloggingPoints.length}</button>
         {filtersOn && <span className="pill bg-soft text-primary-strong">Filtros activos</span>}
       </div>
 
@@ -109,20 +123,22 @@ export function MapPage() {
         <div role="status" className="flex flex-wrap items-center gap-2 text-sm">
           {noResults
             ? <span className="inline-flex items-center gap-2 rounded-xl bg-[#FFF6EC] px-3 py-2 text-[#7A3E0E]"><SearchX size={16} aria-hidden="true" />No se encontraron resultados para «{applied}».</span>
-            : <span className="rounded-xl bg-soft px-3 py-2 text-[#0A4F87]">{search.zone ? <>Mapa centrado en <strong>{search.zone.name}</strong> ({search.zone.hint}) · ubicación ilustrativa</> : <>{search.reports.length} reporte(s) coinciden con «{applied}»</>}</span>}
+            : <span className="rounded-xl bg-soft px-3 py-2 text-[#0A4F87]">{plural(visible.length, 'reporte', 'reportes')} · {plural(inventoryVisible ? search.points.length : 0, 'punto de encharcamiento', 'puntos de encharcamiento')} para «{applied}»{search.zone && <span> · {search.zone.name}</span>}</span>}
           <button type="button" className="btn btn-ghost !min-h-9 !px-2 text-sm" onClick={clear}>Quitar búsqueda</button>
         </div>
       )}
 
-      <div className="mb-4 flex gap-4">
+      <div className={`dashboard-grid mb-4 ${selected ? 'has-detail' : ''}`}>
         <UrbiaMap
-          className="card h-[calc(100dvh-64px-64px-150px)] min-h-[380px] flex-1 !rounded-[22px] md:h-[calc(100vh-76px-300px)] md:min-h-[480px]"
+          className="card dashboard-canvas"
           reports={visible} selectedId={sel} onSelect={setSel} flyTo={fly} legend="box" onViewChange={onViewChange}
           showAvisosLegend={showAvisos}
           layers={<MapLayersMenu heat={heat} onHeat={setHeat} tempMode={tempMode} onTempMode={setTempMode} avisos={showAvisos} onAvisos={setShowAvisos} avisosCount={avisos.length} />}
           extraLayer={<>
             {heat === 'densidad' && <ReportDensityLayer reports={visible} />}
             {heat === 'temperatura' && temp.data && <TemperatureLayer data={temp.data} mode={tempMode} />}
+            {inventoryVisible && <WaterloggingLayer locations={search.points} focusId={applied ? null : focusPoint} />}
+            {applied && <SearchExtent locations={locations} />}
             {showAvisos && <AvisosLayer avisos={avisos} />}
           </>}
           topLeft={<span className="pill bg-white !px-3 !py-2 text-[14px] text-navy shadow-[0_2px_10px_rgb(11_42_78/0.14)]" aria-live="polite"><Layers size={16} aria-hidden="true" />{inView ?? visible.length} incidencias en esta vista</span>}

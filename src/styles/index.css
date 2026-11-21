@@ -1,17 +1,18 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700;750&family=Manrope:wght@500;600;650;700;750;800&display=swap");
 @import "tailwindcss";
 
 /* Tokens semánticos de URBIA Cancún */
 @theme {
-  --color-bg: #F4F8FC;
+  --color-bg: #F8FBFF;
   --color-surface: #FFFFFF;
-  --color-soft: #EAF4FE;
-  --color-primary: #1A82E8;        /* acentos, iconos, foco */
-  --color-primary-strong: #0B66D0; /* CTA y texto azul: contraste AA sobre blanco */
-  --color-primary-hover: #0954AD;
-  --color-navy: #0B2A4E;
-  --color-sky: #2BB5F0;
-  --color-line: #E1EAF3;
-  --color-muted: #5D7590;
+  --color-soft: #EAF7FF;
+  --color-primary: #087DD9;        /* acentos, iconos, foco */
+  --color-primary-strong: #0670C4; /* CTA y texto azul: contraste AA sobre blanco */
+  --color-primary-hover: #055FA6;
+  --color-navy: #0C3159;
+  --color-sky: #24B7EE;
+  --color-line: #DAE9F4;
+  --color-muted: #59748D;
   --color-muted-strong: #4D6780;   /* texto secundario sobre fondos azul pálido */
   --color-bache: #F07A1E;
   --color-agua: #1E88E5;
@@ -22,9 +23,9 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-display: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  --shadow-soft: 0 1px 2px rgb(11 42 78 / 0.04), 0 8px 24px rgb(11 42 78 / 0.06);
+  --shadow-soft: 0 3px 13px #0c315908, 0 1px 3px #0c315906;
   --shadow-float: 0 12px 36px rgb(11 42 78 / 0.16);
-  --shadow-cta: 0 8px 18px rgb(11 102 208 / 0.28);
+  --shadow-cta: 0 3px 7px #087dd91c;
 }
 
 @layer base {
@@ -44,10 +45,10 @@
 }
 
 @layer components {
-  .card { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 18px; box-shadow: var(--shadow-soft); }
+  .card { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 15px; box-shadow: var(--shadow-soft); }
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 12px; font-weight: 600; font-size: 14px; transition: background .15s, border-color .15s, color .15s, box-shadow .15s, filter .15s; cursor: pointer; }
   .btn:disabled { cursor: not-allowed; opacity: .55; }
-  .btn-primary { background: linear-gradient(180deg, #2C92F3 0%, #0B66D0 100%); color: #fff; box-shadow: var(--shadow-cta); }
+  .btn-primary { background: linear-gradient(112deg, #0d9beb, #087dd9 50%, #0668c4); color: #fff; box-shadow: var(--shadow-cta); }
   .btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
   .btn-secondary { background: #fff; color: var(--color-navy); border: 1px solid var(--color-line); }
   .btn-secondary:hover:not(:disabled) { border-color: #B7D6EE; background: #F4FAFF; }
@@ -99,3 +100,114 @@
 
 /* Mapa base más suave y frío, como en el diseño */
 .leaflet-tile-pane { filter: saturate(0.62) brightness(1.04) contrast(0.97); }
+
+.city-brand {
+  height: 54px;
+  width: 180px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  position: relative;
+  flex-shrink: 0;
+}
+.brand-symbol {
+  width: 72px;
+  height: 51px;
+  overflow: hidden;
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+}
+.brand-symbol img {
+  position: absolute;
+  width: 162px;
+  max-width: none;
+  height: auto;
+  top: 0;
+  left: -1px;
+}
+.brand-wordmark {
+  width: 103px;
+  height: 44px;
+  position: relative;
+  display: block;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.brand-wordmark img {
+  width: 218px;
+  height: auto;
+  max-width: none;
+  position: absolute;
+  left: -112px;
+  top: -11px;
+}
+.city-brand-light .brand-wordmark img {
+  filter: brightness(0) invert(1);
+}
+.city-brand-light .brand-symbol img {
+  filter: brightness(1.18) saturate(1.08);
+}
+
+.city-sidebar {
+  padding: 16px 14px 10px;
+  gap: 5px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  background: radial-gradient(ellipse at 0 0, #086492b3, transparent 30%),
+    radial-gradient(ellipse at 50% 100%, #075887aa, transparent 36%),
+    linear-gradient(170deg, #0a345e, #082d55 60%, #073c68);
+}
+.city-brand-row { display: flex; align-items: center; min-height: 84px; }
+.city-brand-compact { width: 44px; }
+.city-brand-compact .brand-symbol { width: 44px; height: 34px; }
+.city-brand-compact img { width: 100px; }
+.city-nav-item { display: flex; align-items: center; gap: 12px; flex-shrink: 0; min-height: 44px; padding-inline: 12px; color: #e1edfa; border-radius: 9px; font-size: 13px; font-weight: 500; }
+.city-nav-item:hover { background: #ffffff12; }
+.city-nav-item.is-active { color: #07375a; font-weight: 700; background: linear-gradient(100deg, #cff8ff, #50e4ec 64%, #16cfdf); }
+.sidebar-art { width: 100%; height: clamp(60px, 17vh, 165px); object-fit: contain; object-position: center bottom; pointer-events: none; }
+@media (max-height: 720px) { .sidebar-art { height: 54px; } }
+
+.desktop-sidebar { z-index: 1100; }
+.desktop-sidebar .city-brand-row { min-height: 108px; }
+.sidebar-pin {
+  position: absolute;
+  top: 3px;
+  right: 2px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: transparent;
+  color: #a8c9db;
+  cursor: pointer;
+  transition: color .15s ease;
+}
+@media (hover: hover) {
+  .sidebar-pin:hover { color: #e3f7ff; }
+}
+.sidebar-pin:focus-visible { outline: 2px solid #8de6f2; outline-offset: -5px; }
+.mobile-menu { position: fixed; inset: 0 auto 0 0; margin: 0; padding: 0; width: min(300px, 88vw); height: 100dvh; max-height: none; max-width: none; border: 0; }
+.mobile-menu::backdrop { background: rgb(9 37 66 / .48); }
+body:has(.mobile-menu[open]) { overflow: hidden; }
+.map-dashboard { width: 100%; max-width: 1800px; margin-inline: auto; padding: clamp(16px, 2vw, 28px); padding-top: clamp(16px, 1.5vw, 24px); display: flex; flex-direction: column; gap: 16px; }
+.dashboard-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; --map-height: clamp(360px, 55dvh, 560px); }
+.dashboard-canvas { height: var(--map-height); min-width: 0; border-radius: 15px; }
+.dashboard-weather { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 16px; min-height: 72px; background: linear-gradient(110deg, white, #f3faff); }
+.weather-rain { display: flex; align-items: center; gap: 6px; padding-inline: 15px; min-height: 36px; border-inline: 1px solid var(--color-line); }
+.weather-rain svg { color: var(--color-primary); }
+.weather-rain strong { font-size: 18px; }
+.map-report-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+.report-cover { height: clamp(112px, 15dvh, 152px); flex-shrink: 0; }
+@media (min-width: 48rem) {
+  .dashboard-grid { --map-height: clamp(400px, calc(100dvh - 358px), 850px); }
+}
+@media (min-width: 64rem) {
+  .dashboard-grid.has-detail { grid-template-columns: minmax(0,1fr) clamp(260px,20vw,312px); }
+  .map-report-card, .map-detail-panel { width: 100%; height: var(--map-height); overflow-y: auto; scrollbar-width: thin; }
+}
+@media (max-width: 47.99rem) {
+  .map-dashboard { padding: 14px 16px; gap: 12px; }
+  .map-home .leaflet-control-attribution { max-width: 70vw; }
+}

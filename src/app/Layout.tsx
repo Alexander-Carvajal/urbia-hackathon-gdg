@@ -1,7 +1,7 @@
-import { BarChart3, Bell, Check, ChevronDown, ChevronsLeft, ChevronsRight, Cloud, CloudOff, Database, Droplets, FileText, House, Loader2, Map as MapIcon, MapPin, Menu, Plus, RefreshCw, Search, ShieldCheck, User, X } from 'lucide-react'
+import { BarChart3, Bell, Check, ChevronDown, Cloud, CloudOff, Database, Droplets, FileText, House, Loader2, Map as MapIcon, MapPin, Menu, Plus, RefreshCw, Search, ShieldCheck, User, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Logo, SidebarWaves } from '../components/brand/Brand'
+import { Logo, SidebarArt } from '../components/brand/Brand'
 import { useReports } from '../features/reports/store'
 import { RewardWatcher } from '../features/rewards/RewardsUI'
 import { relativeTime } from '../lib/format'
@@ -61,7 +61,7 @@ function CitySelector() {
   const [open, setOpen] = useState(false)
   const ref = useOutside(open, () => setOpen(false))
   return (
-    <div className="relative hidden lg:block" ref={ref}>
+    <div className="city-location relative ml-auto hidden xl:block" ref={ref}>
       <button type="button" className="flex h-12 items-center gap-2.5 whitespace-nowrap rounded-xl border border-line bg-white px-4 text-[15px] font-medium hover:bg-soft" aria-expanded={open} aria-haspopup="listbox" onClick={() => setOpen((v) => !v)}>
         <MapPin size={18} className="text-primary" aria-hidden="true" /> Cancún, Q. Roo <ChevronDown size={16} aria-hidden="true" />
       </button>
@@ -75,7 +75,7 @@ function CitySelector() {
   )
 }
 
-export function SearchBox({ autoFocus = false, onDone, placeholder = 'Buscar colonia o zona…', id = 'global-search' }: { autoFocus?: boolean; onDone?: () => void; placeholder?: string; id?: string }) {
+export function SearchBox({ autoFocus = false, onDone, placeholder = 'Buscar región, calle o nombre…', id = 'global-search' }: { autoFocus?: boolean; onDone?: () => void; placeholder?: string; id?: string }) {
   const nav = useNavigate()
   const [q, setQ] = useState('')
   const submit = (e: FormEvent) => {
@@ -87,8 +87,8 @@ export function SearchBox({ autoFocus = false, onDone, placeholder = 'Buscar col
   return (
     <form role="search" onSubmit={submit} className="relative w-full">
       <label htmlFor={id} className="sr-only">Buscar colonia, zona o referencia</label>
-      <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
-      <input id={id} autoFocus={autoFocus} value={q} onChange={(e) => setQ(e.target.value)} type="search" placeholder={placeholder} className="input !min-h-12 !rounded-xl !border-line !bg-[#F7FAFD] !pl-11" />
+      <button type="submit" aria-label="Buscar en el mapa" className="absolute inset-y-0 left-0 grid w-11 place-items-center text-primary-strong"><Search size={18} /></button>
+      <input id={id} autoFocus={autoFocus} value={q} onChange={(e) => setQ(e.target.value)} type="search" placeholder={placeholder} className="input !min-h-12 !rounded-full !border-line !bg-bg !pl-11" />
     </form>
   )
 }
@@ -101,78 +101,102 @@ function SyncStatus() {
   return <button type="button" onClick={reload} className="pill bg-[#FDECEC] text-[#9B1C1C]" title={backend.error}><CloudOff size={14} aria-hidden="true" />Sin conexión <RefreshCw size={12} aria-hidden="true" /></button>
 }
 
-const NAV = [
-  { to: '/', label: 'Inicio', icon: House, end: true },
-  { to: '/mapa', label: 'Mapa', icon: MapIcon },
-  { to: '/reportes', label: 'Reportes', icon: FileText },
-  { to: '/avisos', label: 'Avisos', icon: Droplets },
-  { to: '/analisis', label: 'Análisis', icon: BarChart3 },
+const MAIN_NAV = [
+  { to: '/', label: 'Inicio', icon: House },
+  { to: '/mapa', label: 'Mapa de incidencias', icon: MapIcon },
+  { to: '/reportes', label: 'Reportes ciudadanos', icon: FileText },
+  { to: '/analisis', label: 'Conexiones urbanas', icon: BarChart3 },
+]
+const ENVIRONMENT_NAV = [
+  { to: '/avisos', label: 'Avisos y clima', icon: Droplets },
   { to: '/datos', label: 'Datos abiertos', icon: Database },
-  { to: '/perfil', label: 'Mis reportes', icon: User },
 ]
 
 function NavItems({ collapsed = false, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
-  const cls = ({ isActive }: { isActive: boolean }) =>
-    `flex min-h-12 items-center gap-3.5 rounded-2xl px-4 text-[16px] font-medium transition-colors ${isActive
-      ? 'bg-[linear-gradient(180deg,#2C92F3,#0B66D0)] font-semibold text-white shadow-[var(--shadow-cta)]'
-      : 'text-navy hover:bg-soft'} ${collapsed ? 'justify-center !px-0' : ''}`
+  const [environmentOpen, setEnvironmentOpen] = useState(true)
+  const item = ({ to, label, icon: Icon }: typeof MAIN_NAV[number]) => (
+    <NavLink key={to} to={to} end={to === '/'} title={collapsed ? label : undefined} onClick={onNavigate}
+      className={({ isActive }) => `city-nav-item ${isActive ? 'is-active' : ''} ${collapsed ? 'justify-center' : ''}`}>
+      <Icon size={19} aria-hidden="true" /><span className={collapsed ? 'sr-only' : undefined}>{label}</span>
+    </NavLink>
+  )
   return (
     <>
-      {NAV.map((n) => (
-        <NavLink key={n.to} to={n.to} end={n.end} className={cls} title={collapsed ? n.label : undefined} onClick={onNavigate}>
-          <n.icon size={21} aria-hidden="true" strokeWidth={2} />{collapsed ? <span className="sr-only">{n.label}</span> : n.label}
-        </NavLink>
-      ))}
+      {MAIN_NAV.map(item)}
+      <div className="city-nav-section">
+        {!collapsed && <button className="city-environment-toggle" aria-expanded={environmentOpen} onClick={() => setEnvironmentOpen(!environmentOpen)}>
+          Entorno <ChevronDown size={15} className={environmentOpen ? '' : '-rotate-90'} />
+        </button>}
+        {(collapsed || environmentOpen) && ENVIRONMENT_NAV.map(item)}
+      </div>
+      <div className="city-nav-section">{item({ to: '/perfil', label: 'Mi cuenta', icon: User })}</div>
     </>
   )
 }
 
 function CitizenNote() {
   return (
-    <div className="relative z-10 rounded-2xl border border-line bg-white/90 p-4 shadow-[var(--shadow-soft)]">
-      <p className="flex items-center gap-2 text-[14px] font-bold text-navy"><ShieldCheck size={18} className="text-primary" aria-hidden="true" />Plataforma ciudadana</p>
-      <p className="mt-1 text-[13px] leading-snug text-muted">Datos de demostración. No es un sistema oficial de atención ni información en tiempo real.</p>
+    <div className="relative z-10 rounded-xl border border-white/15 bg-white/5 p-3">
+      <p className="flex items-center gap-2 text-[13px] font-bold text-white"><ShieldCheck size={18} className="text-primary" aria-hidden="true" />Plataforma ciudadana</p>
+      <p className="mt-1 text-xs leading-snug text-sky-100">Datos de demostración. No es un sistema oficial de atención ni información en tiempo real.</p>
     </div>
   )
 }
 
-function SideNav({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+function SideNav() {
+  const [pinned, setPinned] = useState(() => window.matchMedia('(min-width: 1191px)').matches)
+  const [hovered, setHovered] = useState(false)
+  const [keyboardFocus, setKeyboardFocus] = useState(false)
+  const expanded = pinned || hovered || keyboardFocus
+
   return (
-    <nav aria-label="Navegación principal" className={`sticky top-[76px] hidden h-[calc(100vh-76px)] shrink-0 flex-col gap-1.5 overflow-hidden border-r border-line bg-white px-4 pb-28 pt-5 md:flex ${collapsed ? 'w-[84px] !px-3' : 'w-[248px]'}`}>
-      <NavItems collapsed={collapsed} />
-      <div className="mt-auto flex flex-col gap-3">
-        {!collapsed && <CitizenNote />}
-        <button type="button" onClick={onToggle} className={`relative z-10 flex min-h-10 items-center gap-2 rounded-xl px-3 text-[13px] font-medium text-muted hover:bg-soft ${collapsed ? 'justify-center' : ''}`} aria-label={collapsed ? 'Expandir navegación' : 'Contraer navegación'}>
-          {collapsed ? <ChevronsRight size={18} /> : <><ChevronsLeft size={18} /> Contraer menú</>}
-        </button>
-      </div>
-      <SidebarWaves />
+    <nav aria-label="Navegación principal"
+      className={`city-sidebar desktop-sidebar sticky top-0 hidden h-dvh shrink-0 flex-col md:flex ${expanded ? 'w-[240px]' : 'w-[72px]'}`}
+      onPointerEnter={(event) => { if (event.pointerType === 'mouse') setHovered(true) }}
+      onPointerLeave={() => setHovered(false)}
+      onFocus={(event) => { if (event.target.matches(':focus-visible')) setKeyboardFocus(true) }}
+      onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setKeyboardFocus(false) }}>
+      <div className="city-brand-row"><Logo compact={!expanded} onDark /></div>
+      <button type="button" className="sidebar-pin" aria-pressed={pinned} aria-label={pinned ? 'Liberar menú lateral' : 'Fijar menú lateral'}
+        title={pinned ? 'Liberar menú lateral' : 'Fijar menú lateral'} onClick={() => { setPinned(!pinned); setHovered(false); setKeyboardFocus(false) }}>
+        <Menu size={16} strokeWidth={1.7} aria-hidden="true" />
+      </button>
+      <NavItems collapsed={!expanded} />
+      <div className="mt-auto pt-4">{expanded && <CitizenNote />}</div>
+      <SidebarArt />
     </nav>
   )
 }
 
 /** Menú lateral en móvil (botón hamburguesa). */
 function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+    const dialog = ref.current
+    if (!open || !dialog) return
+    dialog.showModal()
+    const desktop = window.matchMedia('(min-width: 48rem)')
+    const closeOnDesktop = () => { if (desktop.matches) dialog.close() }
+    desktop.addEventListener('change', closeOnDesktop)
+    return () => {
+      desktop.removeEventListener('change', closeOnDesktop)
+      if (dialog.open) dialog.close()
+    }
+  }, [open])
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-[2500] md:hidden" role="dialog" aria-modal="true" aria-label="Menú">
-      <button type="button" className="animate-fade absolute inset-0 bg-[rgb(11_42_78/0.4)]" aria-label="Cerrar menú" onClick={onClose} />
-      <div className="animate-slide relative flex h-full w-[min(300px,85vw)] flex-col gap-1.5 overflow-hidden bg-white px-4 pb-28 pt-4 shadow-[var(--shadow-float)]">
+    <dialog ref={ref} className="mobile-menu" id="mobile-menu" aria-label="Menú" onClose={onClose}
+      onClick={(event) => { if (event.target === ref.current) onClose() }}>
+      <div className="animate-slide city-sidebar relative flex h-full flex-col gap-1.5">
         <div className="mb-3 flex items-center justify-between">
-          <Logo />
-          <button type="button" className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-soft" aria-label="Cerrar menú" onClick={onClose}><X size={20} /></button>
+          <Logo onDark />
+          <button type="button" className="flex h-10 w-10 items-center justify-center rounded-xl text-white hover:bg-white/10" aria-label="Cerrar menú" onClick={onClose}><X size={20} /></button>
         </div>
         <NavItems onNavigate={onClose} />
         <div className="mt-auto"><CitizenNote /></div>
-        <SidebarWaves />
+        <SidebarArt />
       </div>
-    </div>
+    </dialog>
   )
 }
 
@@ -206,34 +230,34 @@ function BottomNav() {
 
 export function Layout() {
   const { user, persistent, backend } = useReports()
-  const [collapsed, setCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1100)
   const [drawer, setDrawer] = useState(false)
   const { pathname } = useLocation()
   useEffect(() => { setDrawer(false) }, [pathname])
   const initials = user.alias.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen">
       <a href="#contenido" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[5000] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2">Saltar al contenido</a>
-      <header className="sticky top-0 z-[1300] flex h-[64px] items-center gap-3 border-b border-line bg-white/95 px-3 backdrop-blur md:h-[76px] md:gap-4 md:px-6">
-        <button type="button" className="flex h-11 w-11 items-center justify-center rounded-xl text-navy hover:bg-soft md:hidden" aria-label="Abrir menú" onClick={() => setDrawer(true)}><Menu size={24} /></button>
-        <Logo />
-        <span className="mx-1 hidden h-10 w-px bg-line md:block" aria-hidden="true" />
-        <div className="hidden w-full max-w-[420px] md:block"><SearchBox /></div>
-        <CitySelector />
-        <div className="ml-auto flex items-center gap-2 md:gap-3">
-          <SyncStatus />
-          <Link to="/reportar" className="btn btn-primary hidden !min-h-12 !rounded-xl !px-5 !text-[15px] md:inline-flex"><Plus size={20} strokeWidth={2.6} aria-hidden="true" /> Reportar incidencia</Link>
-          <Notifications />
-          <Link to="/perfil" className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-full bg-soft text-sm font-bold text-primary-strong md:flex" aria-label={`Perfil de ${user.alias}`} title={user.alias}>
-            {initials || <User size={20} />}
-          </Link>
-        </div>
-      </header>
-      {!persistent && <div role="alert" className="bg-[#FFF6EC] px-4 py-2 text-center text-sm text-[#7A3E0E]">Tu navegador no permite guardar datos locales: los cambios se perderán al recargar.</div>}
-      {backend.kind === 'supabase' && backend.status === 'error' && <div role="alert" className="bg-[#FDECEC] px-4 py-2 text-center text-sm text-[#9B1C1C]">No se pudo conectar con la base de datos compartida: {backend.error}</div>}
-      <div className="flex flex-1">
-        <SideNav collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
+      <SideNav />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-[1300] flex h-[64px] items-center gap-3 border-b border-line bg-white/95 px-3 backdrop-blur md:h-[76px] md:gap-4 md:px-7">
+          <button type="button" className="flex h-11 w-11 items-center justify-center rounded-xl text-navy hover:bg-soft md:hidden" aria-label="Abrir menú" aria-haspopup="dialog" aria-expanded={drawer} onClick={() => setDrawer(true)}><Menu size={24} /></button>
+          <div className="md:hidden"><Logo /></div>
+          <div className="hidden w-full max-w-[600px] md:block"><SearchBox /></div>
+          <CitySelector />
+          <div className="ml-auto flex items-center gap-2 md:gap-3 xl:ml-0">
+            <SyncStatus />
+            {pathname !== '/' && (
+              <Link to="/reportar" className="btn btn-primary hidden whitespace-nowrap !min-h-12 !rounded-xl !px-5 !text-[15px] md:inline-flex"><Plus size={20} strokeWidth={2.6} aria-hidden="true" /> Reportar incidencia</Link>
+            )}
+            <Notifications />
+            <Link to="/perfil" className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-full bg-soft text-sm font-bold text-primary-strong md:flex" aria-label={`Perfil de ${user.alias}`} title={user.alias}>
+              {initials || <User size={20} />}
+            </Link>
+          </div>
+        </header>
+        {!persistent && <div role="alert" className="bg-[#FFF6EC] px-4 py-2 text-center text-sm text-[#7A3E0E]">Tu navegador no permite guardar datos locales: los cambios se perderán al recargar.</div>}
+        {backend.kind === 'supabase' && backend.status === 'error' && <div role="alert" className="bg-[#FDECEC] px-4 py-2 text-center text-sm text-[#9B1C1C]">No se pudo conectar con la base de datos compartida: {backend.error}</div>}
         <main id="contenido" className="flex min-w-0 flex-1 flex-col pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0">
           <Outlet />
           <footer className="mt-auto px-4 py-4 text-xs text-muted md:px-8">

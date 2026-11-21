@@ -1,11 +1,12 @@
-import { ArrowRight, CalendarDays, ChevronDown, ChevronRight, ChevronUp, CircleCheck, Clock, MapPin, ThumbsUp, Users, X } from 'lucide-react'
+import potholeIllustration from './pothole-demo.png'
+import { ArrowRight, ChevronDown, ChevronUp, CircleCheck, Clock, MapPin, ThumbsUp, Users, X } from 'lucide-react'
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { CATEGORIES } from '../../data/categories'
 import { zoneById } from '../../data/zones'
 import { useCorroboration } from '../../features/reports/actions'
 import { useReports } from '../../features/reports/store'
-import { fullDate, plural, relativeTime } from '../../lib/format'
+import { plural, relativeTime } from '../../lib/format'
 import { haversine } from '../../lib/geo'
 import { confirmationsOf } from '../../lib/rules'
 import type { Report } from '../../types'
@@ -19,7 +20,12 @@ export function ReportCover({ report, className = '', children }: { report: Repo
     <div className={`relative overflow-hidden ${className}`}>
       {report.photo
         ? <img src={report.photo} alt={`Evidencia del reporte: ${report.title}`} className="h-full w-full object-cover" />
-        : (
+        : report.category === 'bache' ? (
+          <>
+            <img src={potholeIllustration} alt="Imagen ilustrativa de un bache" className="h-full w-full object-cover" />
+            <span className="absolute bottom-2 right-2 rounded bg-navy/85 px-2 py-1 text-[10px] text-white">Imagen ilustrativa</span>
+          </>
+        ) : (
           <div className="flex h-full w-full items-center justify-center" style={{ background: `radial-gradient(120% 90% at 20% 10%, #ffffff 0%, ${c.tint} 45%, ${c.color}33 100%)` }} role="img" aria-label={`Ilustración de ${c.label.toLowerCase()} (sin foto en esta demo)`}>
             <svg className="absolute inset-x-0 bottom-0 h-1/2 w-full opacity-40" viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true">
               <path d="M0 50c40-12 80-12 120 0s80 12 120 0 45-10 60-6v36H0z" fill={c.color} opacity=".25" />
@@ -41,39 +47,28 @@ function CategoryBadge({ report }: { report: Report }) {
   return <span className="pill text-white shadow" style={{ background: c.color }}><I size={14} aria-hidden="true" strokeWidth={2.4} />{c.group}</span>
 }
 
-function Verification({ report }: { report: Report }) {
-  const n = confirmationsOf(report)
-  return (
-    <div className="flex flex-col gap-2 border-t border-line pt-3">
-      <p className="flex items-center gap-2 text-[15px] font-bold text-primary-strong"><Users size={18} aria-hidden="true" />Verificación comunitaria</p>
-      {n > 0
-        ? <p className="flex items-center gap-2 rounded-xl border border-[#BFE7CF] bg-[#F0FAF4] px-3 py-2.5 text-[14px] text-[#17663A]"><CircleCheck size={18} aria-hidden="true" /><span><strong>{n}</strong> {n === 1 ? 'ciudadano lo corroboró' : 'ciudadanos lo corroboraron'}</span></p>
-        : <p className="rounded-xl border border-line bg-bg px-3 py-2.5 text-[14px] text-muted">Aún sin corroboraciones. ¿Lo has visto?</p>}
-    </div>
-  )
-}
-
-/** Tarjeta del reporte destacado en el inicio (escritorio). */
 export function HomeReportCard({ report, onClose }: { report: Report; onClose: () => void }) {
-  const zone = zoneById(report.zoneId)
+  const related = useRelated(report)
   return (
-    <aside aria-label="Reporte seleccionado" className="card animate-fade flex flex-col overflow-hidden">
-      <ReportCover report={report} className="h-[190px]">
-        <button type="button" className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-navy/80 text-white hover:bg-navy" aria-label="Cerrar" onClick={onClose}><X size={18} /></button>
-        <span className="absolute bottom-3 left-3"><CategoryBadge report={report} /></span>
-      </ReportCover>
-      <div className="flex flex-1 flex-col gap-3 p-5">
-        <h2 className="text-[20px] font-extrabold leading-tight">{report.title}</h2>
-        <div><StatusBadge status={report.status} /></div>
-        <p className="line-clamp-4 text-[14px] leading-relaxed text-[#29435E]">{report.description}</p>
-        <dl className="flex flex-col gap-1.5 text-[14px] text-[#29435E]">
-          <div className="flex items-center gap-2"><CalendarDays size={16} className="shrink-0 text-primary" aria-hidden="true" /><dd>{fullDate(report.createdAt)} h</dd></div>
-          <div className="flex items-center gap-2"><MapPin size={16} className="shrink-0 text-primary" aria-hidden="true" /><dd className="truncate">{report.reference ? report.reference.replace(/\s*\(ubicación ilustrativa\)/, '') : zone?.name}{zone ? `, ${zone.name}` : ''} (aprox.)</dd></div>
-        </dl>
-        <Verification report={report} />
-        <Link to={`/reportes/${report.id}`} className="btn btn-primary mt-auto !min-h-12 w-full !text-[16px]">Ver detalle <ChevronRight size={18} aria-hidden="true" /></Link>
-        <p className="text-center text-[11px] text-muted">Corroboración ciudadana · no equivale a una validación oficial</p>
+    <aside className="incident-panel" aria-label="Reporte seleccionado">
+      <div className="incident-panel-heading">
+        <h2>Reporte seleccionado</h2>
+        <button className="button" onClick={onClose} aria-label="Cerrar panel del reporte"><X size={19} /></button>
       </div>
+      <ReportCover report={report} className="incident-evidence" />
+      <h3>{report.title}</h3>
+      <div><StatusBadge status={report.status} long /></div>
+      <div className="incident-metadata">
+        <span><MapPin size={17} />{report.reference || zoneById(report.zoneId)?.name}</span>
+        <span><Clock size={17} />{relativeTime(report.createdAt)}</span>
+        <span><Users size={17} />{plural(confirmationsOf(report), 'confirmación comunitaria', 'confirmaciones comunitarias')}</span>
+      </div>
+      {related.length > 0 && <Link className="related-reports-link" to={`/reportes/${report.id}`}>{plural(related.length, 'reporte relacionado', 'reportes relacionados')} <ArrowRight size={14} /></Link>}
+      <div className="incident-panel-actions">
+        <ConfirmButton report={report} primary />
+        <Link className="btn btn-outline" to={`/reportes/${report.id}`}>Ver detalle completo <ArrowRight size={16} /></Link>
+      </div>
+      <p className="text-[10px] text-muted">Corroboración ciudadana · sin validación oficial.</p>
     </aside>
   )
 }
@@ -88,11 +83,11 @@ function useRelated(report: Report) {
     .slice(0, 3), [reports, report])
 }
 
-function ConfirmButton({ report }: { report: Report }) {
+function ConfirmButton({ report, primary = false }: { report: Report; primary?: boolean }) {
   const c = useCorroboration(report)
   return (
     <>
-      <button type="button" className="btn btn-outline w-full" onClick={c.run} disabled={c.disabled} title={c.reason || undefined}>
+      <button type="button" className={`btn w-full ${primary && !c.done ? 'btn-primary' : 'btn-outline'}`} onClick={c.run} disabled={c.disabled} title={c.reason || undefined}>
         {c.done ? <><CircleCheck size={18} aria-hidden="true" />Ya confirmaste esta incidencia</> : <><ThumbsUp size={18} aria-hidden="true" />Confirmar esta incidencia</>}
       </button>
       {c.reason && !c.done && <p className="-mt-1 text-center text-xs text-muted">{c.reason}</p>}
@@ -105,12 +100,12 @@ export function SidePanel({ report, onClose }: { report: Report; onClose: () => 
   const zone = zoneById(report.zoneId)
   const related = useRelated(report)
   return (
-    <aside aria-label="Reporte seleccionado" className="card animate-fade hidden w-[340px] shrink-0 flex-col gap-3 self-stretch overflow-y-auto p-4 lg:flex">
+    <aside aria-label="Reporte seleccionado" className="card animate-fade map-detail-panel hidden shrink-0 flex-col gap-3 self-stretch overflow-y-auto p-4 lg:flex">
       <div className="flex items-center justify-between">
         <h2 className="text-[18px] font-extrabold">Reporte seleccionado</h2>
         <button type="button" className="flex h-9 w-9 items-center justify-center rounded-lg text-navy hover:bg-soft" aria-label="Cerrar panel del reporte" onClick={onClose}><X size={20} /></button>
       </div>
-      <ReportCover report={report} className="h-[150px] rounded-xl"><span className="absolute bottom-2.5 left-2.5"><CategoryBadge report={report} /></span></ReportCover>
+      <ReportCover report={report} className="report-cover shrink-0 rounded-xl"><span className="absolute bottom-2.5 left-2.5"><CategoryBadge report={report} /></span></ReportCover>
       <h3 className="text-[18px] font-extrabold leading-snug">{report.title}</h3>
       <div><StatusBadge status={report.status} long /></div>
       <dl className="flex flex-col gap-1.5 text-[14px] text-[#29435E]">

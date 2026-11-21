@@ -1,3 +1,4 @@
+import { WaterloggingDirectory } from '../../components/map/WaterloggingLayer'
 import { CloudRain, ExternalLink, Loader2, MapPin, RefreshCw, TriangleAlert, Umbrella } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -111,7 +112,7 @@ export function AvisosPage() {
               const recent = Date.now() - Date.parse(avisoDate(a.date)) < 3 * 86400_000
               return (
                 <li key={a.key} className="card flex flex-col gap-2 p-4">
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold" style={{ background: t.tint, color: t.ink }}>
                       {a.type === 'corte' && <TriangleAlert size={12} aria-hidden="true" />}{t.label}
                     </span>
@@ -120,11 +121,11 @@ export function AvisosPage() {
                     {recent && <span className="rounded-full bg-[#E3F1FC] px-2.5 py-1 font-semibold text-[#0C3159]">Reciente</span>}
                     <time className="ml-auto text-muted" dateTime={avisoDate(a.date)} title={fullDate(avisoDate(a.date))}>{relativeTime(avisoDate(a.date))}</time>
                   </div>
-                  <h2 className="text-[15px] font-bold leading-snug">{a.title}</h2>
-                  <p className="text-[13px] leading-relaxed text-[#3D5873]">{a.excerpt}</p>
+                  <h2 className="text-lg font-bold leading-snug">{a.title}</h2>
+                  <p className="text-base leading-relaxed text-[#3D5873]">{a.excerpt}</p>
                   <div className="flex flex-wrap items-center gap-2">
                     {a.places.map((p) => (
-                      <span key={p.name} className="inline-flex items-center gap-1 rounded-lg bg-soft px-2 py-1 text-xs font-medium text-[#0A4F87]"><MapPin size={12} aria-hidden="true" />{p.name}</span>
+                      <span key={p.name} className="inline-flex items-center gap-1 rounded-lg bg-soft px-2 py-1 text-sm font-medium text-[#0A4F87]"><MapPin size={12} aria-hidden="true" />{p.name}</span>
                     ))}
                     <a href={a.link} target="_blank" rel="noopener noreferrer" className="btn btn-ghost ml-auto !min-h-9 !px-2 text-sm">Ver aviso oficial <ExternalLink size={14} aria-hidden="true" /></a>
                   </div>
@@ -136,6 +137,7 @@ export function AvisosPage() {
 
         <aside className="flex flex-col gap-4 xl:sticky xl:top-[88px] xl:self-start">
           <RainCard />
+          <WaterloggingDirectory />
           <section className="card overflow-hidden" aria-label="Mapa de avisos ubicados">
             <UrbiaMap className="h-[320px]" reports={[]} selectedId={null} onSelect={() => {}} cluster={false} showAvisosLegend extraLayer={<AvisosLayer avisos={located} />} />
             <p className="help px-4 py-3">{located.length} aviso(s) ubicados por las colonias o avenidas que mencionan. La ubicación es aproximada; consulta siempre el aviso oficial.</p>
