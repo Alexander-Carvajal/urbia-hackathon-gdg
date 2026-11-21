@@ -2,6 +2,8 @@
 
 Prototipo de inteligencia urbana colaborativa para explorar y reportar baches, falta de agua e inundaciones o encharcamientos en Cancún. Se desarrolló para una demostración de hackatón con React, TypeScript, Vite, Tailwind CSS y Leaflet.
 
+**Aplicación desplegada:** [urbia-hackathon-gdg.vercel.app](https://urbia-hackathon-gdg.vercel.app/)
+
 > **Alcance de los datos:** los 16 reportes iniciales y sus corroboraciones son ficticios. Las personas pueden crear reportes reales, pero URBIA no los verifica oficialmente. Los avisos, la lluvia y la API de inundaciones conservan la procedencia de sus fuentes. La API HTTP es un proceso separado y todavía no alimenta los pines del mapa.
 
 ## Inicio rápido
@@ -40,10 +42,12 @@ Consulta `http://localhost:8787/api/inundaciones`. Puedes cambiar el puerto con 
 ## Funciones principales
 
 - Mapa y listado de reportes con búsqueda, filtros y detalle.
+- Planeación de trayectos en auto por Cancún, con alternativas y reportes activos cercanos al recorrido.
+- Alertas de nuevos reportes cerca del trayecto mientras esa pantalla permanece abierta; las notificaciones del dispositivo requieren permiso del navegador.
 - Asistente de cuatro pasos para publicar reportes con ubicación y foto opcional.
-- Corroboraciones, objeciones, historial y conexiones por proximidad y tiempo.
+- Corroboraciones, objeciones, historial y conexiones por proximidad y tiempo. Los reportes ciudadanos dejan de mostrarse como activos al vencer su periodo de vigencia según la categoría.
 - Avisos de Aguakan y del Gobierno de Quintana Roo, además de lluvia de Open-Meteo.
-- Importación y exportación de CSV y GeoJSON.
+- Importación y exportación de CSV y GeoJSON desde «Mi cuenta».
 - Modo local o base compartida con Supabase; interfaz instalable como PWA.
 - Acceso demo opcional para explorar y requerido en la interfaz para participar.
 - API HTTP independiente con eventos históricos documentados y contexto meteorológico.
