@@ -1,0 +1,249 @@
+import { BarChart3, Bell, Check, ChevronDown, ChevronsLeft, ChevronsRight, Cloud, CloudOff, Database, Droplets, FileText, House, Loader2, Map as MapIcon, MapPin, Menu, Plus, RefreshCw, Search, ShieldCheck, User, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Logo, SidebarWaves } from '../components/brand/Brand'
+import { useReports } from '../features/reports/store'
+import { RewardWatcher } from '../features/rewards/RewardsUI'
+import { relativeTime } from '../lib/format'
+
+function useOutside(open: boolean, close: () => void) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) close() }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
+    document.addEventListener('mousedown', onDown); document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open, close])
+  return ref
+}
+
+function Notifications() {
+  const { reports, user } = useReports()
+  const [open, setOpen] = useState(false)
+  const [seen, setSeen] = useState<string[]>([])
+  const ref = useOutside(open, () => setOpen(false))
+  const items = useMemo(() => {
+    const mine = reports.filter((r) => r.authorId === user.id).map((r) => ({ id: 'm' + r.id + r.history.length, to: `/reportes/${r.id}`, text: `Tu reporte «${r.title}» está ${r.status === 'pendiente' ? 'pendiente de confirmaciones' : 'en estado ' + r.status}`, at: r.history[r.history.length - 1].at }))
+    const recent = [...reports].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 4).map((r) => ({ id: 'n' + r.id, to: `/reportes/${r.id}`, text: `Nuevo reporte cerca: ${r.title}`, at: r.createdAt }))
+    return [...mine, ...recent].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 5)
+  }, [reports, user.id])
+  const unread = items.filter((i) => !seen.includes(i.id)).length
+  return (
+    <div className="relative" ref={ref}>
+      <button type="button" className="relative flex h-11 w-11 items-center justify-center rounded-full text-navy hover:bg-soft" aria-label={`Notificaciones, ${unread} sin leer`} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        <Bell size={21} />
+        {unread > 0 && <span className="absolute right-2.5 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#E5484D]" aria-hidden="true" />}
+      </button>
+      {open && (
+        <div className="animate-fade absolute right-0 top-12 z-[1500] w-[min(340px,calc(100vw-24px))] rounded-2xl border border-line bg-white p-2 shadow-[var(--shadow-float)]">
+          <div className="flex items-center justify-between px-2 py-1.5">
+            <span className="text-sm font-bold">Notificaciones</span>
+            <button type="button" className="rounded-lg px-2 py-1 text-xs font-semibold text-primary-strong hover:bg-soft" onClick={() => setSeen(items.map((i) => i.id))}>Marcar como leídas</button>
+          </div>
+          <ul className="flex flex-col">
+            {items.map((i) => (
+              <li key={i.id}>
+                <Link to={i.to} onClick={() => { setOpen(false); setSeen((s) => [...s, i.id]) }} className="flex gap-2.5 rounded-xl px-2 py-2.5 hover:bg-bg">
+                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${seen.includes(i.id) ? 'bg-transparent' : 'bg-primary'}`} aria-hidden="true" />
+                  <span className="flex flex-col gap-0.5"><span className="text-[13px] leading-snug">{i.text}</span><span className="text-xs text-muted">{relativeTime(i.at)}</span></span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CitySelector() {
+  const [open, setOpen] = useState(false)
+  const ref = useOutside(open, () => setOpen(false))
+  return (
+    <div className="relative hidden lg:block" ref={ref}>
+      <button type="button" className="flex h-12 items-center gap-2.5 whitespace-nowrap rounded-xl border border-line bg-white px-4 text-[15px] font-medium hover:bg-soft" aria-expanded={open} aria-haspopup="listbox" onClick={() => setOpen((v) => !v)}>
+        <MapPin size={18} className="text-primary" aria-hidden="true" /> Cancún, Q. Roo <ChevronDown size={16} aria-hidden="true" />
+      </button>
+      {open && (
+        <ul role="listbox" aria-label="Ciudad" className="animate-fade absolute left-0 top-14 z-[1500] w-64 rounded-2xl border border-line bg-white p-2 shadow-[var(--shadow-float)]">
+          <li role="option" aria-selected="true" className="flex items-center justify-between rounded-xl bg-soft px-3 py-2.5 text-sm font-semibold">Cancún, Q. Roo <Check size={16} className="text-primary-strong" /></li>
+          <li role="option" aria-selected="false" aria-disabled="true" className="px-3 py-2.5 text-sm text-muted">Otras ciudades: próximamente</li>
+        </ul>
+      )}
+    </div>
+  )
+}
+
+export function SearchBox({ autoFocus = false, onDone, placeholder = 'Buscar colonia o zona…', id = 'global-search' }: { autoFocus?: boolean; onDone?: () => void; placeholder?: string; id?: string }) {
+  const nav = useNavigate()
+  const [q, setQ] = useState('')
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    if (!q.trim()) return
+    nav(`/mapa?q=${encodeURIComponent(q.trim())}`)
+    setQ(''); onDone?.()
+  }
+  return (
+    <form role="search" onSubmit={submit} className="relative w-full">
+      <label htmlFor={id} className="sr-only">Buscar colonia, zona o referencia</label>
+      <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
+      <input id={id} autoFocus={autoFocus} value={q} onChange={(e) => setQ(e.target.value)} type="search" placeholder={placeholder} className="input !min-h-12 !rounded-xl !border-line !bg-[#F7FAFD] !pl-11" />
+    </form>
+  )
+}
+
+function SyncStatus() {
+  const { backend, reload } = useReports()
+  if (backend.kind === 'local') return null
+  if (backend.status === 'connecting') return <span className="hidden items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-muted xl:flex"><Loader2 size={14} className="animate-spin" aria-hidden="true" />Conectando…</span>
+  if (backend.status === 'online') return <span className="pill hidden bg-[#E8F7EE] text-[#17663A] xl:inline-flex" title="Datos compartidos en Supabase, actualizados en tiempo real"><Cloud size={14} aria-hidden="true" />En línea</span>
+  return <button type="button" onClick={reload} className="pill bg-[#FDECEC] text-[#9B1C1C]" title={backend.error}><CloudOff size={14} aria-hidden="true" />Sin conexión <RefreshCw size={12} aria-hidden="true" /></button>
+}
+
+const NAV = [
+  { to: '/', label: 'Inicio', icon: House, end: true },
+  { to: '/mapa', label: 'Mapa', icon: MapIcon },
+  { to: '/reportes', label: 'Reportes', icon: FileText },
+  { to: '/avisos', label: 'Avisos', icon: Droplets },
+  { to: '/analisis', label: 'Análisis', icon: BarChart3 },
+  { to: '/datos', label: 'Datos abiertos', icon: Database },
+  { to: '/perfil', label: 'Mis reportes', icon: User },
+]
+
+function NavItems({ collapsed = false, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
+  const cls = ({ isActive }: { isActive: boolean }) =>
+    `flex min-h-12 items-center gap-3.5 rounded-2xl px-4 text-[16px] font-medium transition-colors ${isActive
+      ? 'bg-[linear-gradient(180deg,#2C92F3,#0B66D0)] font-semibold text-white shadow-[var(--shadow-cta)]'
+      : 'text-navy hover:bg-soft'} ${collapsed ? 'justify-center !px-0' : ''}`
+  return (
+    <>
+      {NAV.map((n) => (
+        <NavLink key={n.to} to={n.to} end={n.end} className={cls} title={collapsed ? n.label : undefined} onClick={onNavigate}>
+          <n.icon size={21} aria-hidden="true" strokeWidth={2} />{collapsed ? <span className="sr-only">{n.label}</span> : n.label}
+        </NavLink>
+      ))}
+    </>
+  )
+}
+
+function CitizenNote() {
+  return (
+    <div className="relative z-10 rounded-2xl border border-line bg-white/90 p-4 shadow-[var(--shadow-soft)]">
+      <p className="flex items-center gap-2 text-[14px] font-bold text-navy"><ShieldCheck size={18} className="text-primary" aria-hidden="true" />Plataforma ciudadana</p>
+      <p className="mt-1 text-[13px] leading-snug text-muted">Datos de demostración. No es un sistema oficial de atención ni información en tiempo real.</p>
+    </div>
+  )
+}
+
+function SideNav({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+  return (
+    <nav aria-label="Navegación principal" className={`sticky top-[76px] hidden h-[calc(100vh-76px)] shrink-0 flex-col gap-1.5 overflow-hidden border-r border-line bg-white px-4 pb-28 pt-5 md:flex ${collapsed ? 'w-[84px] !px-3' : 'w-[248px]'}`}>
+      <NavItems collapsed={collapsed} />
+      <div className="mt-auto flex flex-col gap-3">
+        {!collapsed && <CitizenNote />}
+        <button type="button" onClick={onToggle} className={`relative z-10 flex min-h-10 items-center gap-2 rounded-xl px-3 text-[13px] font-medium text-muted hover:bg-soft ${collapsed ? 'justify-center' : ''}`} aria-label={collapsed ? 'Expandir navegación' : 'Contraer navegación'}>
+          {collapsed ? <ChevronsRight size={18} /> : <><ChevronsLeft size={18} /> Contraer menú</>}
+        </button>
+      </div>
+      <SidebarWaves />
+    </nav>
+  )
+}
+
+/** Menú lateral en móvil (botón hamburguesa). */
+function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-[2500] md:hidden" role="dialog" aria-modal="true" aria-label="Menú">
+      <button type="button" className="animate-fade absolute inset-0 bg-[rgb(11_42_78/0.4)]" aria-label="Cerrar menú" onClick={onClose} />
+      <div className="animate-slide relative flex h-full w-[min(300px,85vw)] flex-col gap-1.5 overflow-hidden bg-white px-4 pb-28 pt-4 shadow-[var(--shadow-float)]">
+        <div className="mb-3 flex items-center justify-between">
+          <Logo />
+          <button type="button" className="flex h-10 w-10 items-center justify-center rounded-xl hover:bg-soft" aria-label="Cerrar menú" onClick={onClose}><X size={20} /></button>
+        </div>
+        <NavItems onNavigate={onClose} />
+        <div className="mt-auto"><CitizenNote /></div>
+        <SidebarWaves />
+      </div>
+    </div>
+  )
+}
+
+function BottomNav() {
+  const { pathname } = useLocation()
+  const item = (active: boolean) => `flex min-h-[60px] flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-semibold ${active ? 'text-primary-strong' : 'text-[#4D6780]'}`
+  const tabs = [
+    { to: '/', label: 'Inicio', icon: House, active: pathname === '/' },
+    { to: '/mapa', label: 'Mapa', icon: MapIcon, active: pathname.startsWith('/mapa') },
+    { to: '/reportes', label: 'Reportes', icon: FileText, active: pathname.startsWith('/reportes') },
+    { to: '/perfil', label: 'Perfil', icon: User, active: pathname.startsWith('/perfil') },
+  ]
+  return (
+    <>
+      {pathname !== '/reportar' && (
+        <Link to="/reportar" aria-label="Reportar incidencia" className="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] right-4 z-[1250] flex h-14 w-14 items-center justify-center rounded-full bg-[linear-gradient(180deg,#2C92F3,#0B66D0)] text-white shadow-[0_10px_24px_rgb(11_102_208/0.4)] md:hidden">
+          <Plus size={28} strokeWidth={2.6} aria-hidden="true" />
+        </Link>
+      )}
+      <nav aria-label="Navegación inferior" className="fixed inset-x-0 bottom-0 z-[1200] flex border-t border-line bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+        {tabs.map((t) => (
+          <Link key={t.to} to={t.to} className={item(t.active)} aria-current={t.active ? 'page' : undefined}>
+            <t.icon size={23} aria-hidden="true" strokeWidth={t.active ? 2.4 : 2} />
+            <span className={t.active ? 'underline decoration-2 underline-offset-4' : ''}>{t.label}</span>
+          </Link>
+        ))}
+      </nav>
+    </>
+  )
+}
+
+export function Layout() {
+  const { user, persistent, backend } = useReports()
+  const [collapsed, setCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1100)
+  const [drawer, setDrawer] = useState(false)
+  const { pathname } = useLocation()
+  useEffect(() => { setDrawer(false) }, [pathname])
+  const initials = user.alias.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <a href="#contenido" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[5000] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2">Saltar al contenido</a>
+      <header className="sticky top-0 z-[1300] flex h-[64px] items-center gap-3 border-b border-line bg-white/95 px-3 backdrop-blur md:h-[76px] md:gap-4 md:px-6">
+        <button type="button" className="flex h-11 w-11 items-center justify-center rounded-xl text-navy hover:bg-soft md:hidden" aria-label="Abrir menú" onClick={() => setDrawer(true)}><Menu size={24} /></button>
+        <Logo />
+        <span className="mx-1 hidden h-10 w-px bg-line md:block" aria-hidden="true" />
+        <div className="hidden w-full max-w-[420px] md:block"><SearchBox /></div>
+        <CitySelector />
+        <div className="ml-auto flex items-center gap-2 md:gap-3">
+          <SyncStatus />
+          <Link to="/reportar" className="btn btn-primary hidden !min-h-12 !rounded-xl !px-5 !text-[15px] md:inline-flex"><Plus size={20} strokeWidth={2.6} aria-hidden="true" /> Reportar incidencia</Link>
+          <Notifications />
+          <Link to="/perfil" className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-full bg-soft text-sm font-bold text-primary-strong md:flex" aria-label={`Perfil de ${user.alias}`} title={user.alias}>
+            {initials || <User size={20} />}
+          </Link>
+        </div>
+      </header>
+      {!persistent && <div role="alert" className="bg-[#FFF6EC] px-4 py-2 text-center text-sm text-[#7A3E0E]">Tu navegador no permite guardar datos locales: los cambios se perderán al recargar.</div>}
+      {backend.kind === 'supabase' && backend.status === 'error' && <div role="alert" className="bg-[#FDECEC] px-4 py-2 text-center text-sm text-[#9B1C1C]">No se pudo conectar con la base de datos compartida: {backend.error}</div>}
+      <div className="flex flex-1">
+        <SideNav collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
+        <main id="contenido" className="flex min-w-0 flex-1 flex-col pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0">
+          <Outlet />
+          <footer className="mt-auto px-4 py-4 text-xs text-muted md:px-8">
+            Reportes y conteos de demostración. URBIA no representa a una autoridad ni certifica incidencias. Mapa base © Esri · © OpenStreetMap.
+          </footer>
+        </main>
+      </div>
+      <MobileDrawer open={drawer} onClose={() => setDrawer(false)} />
+      <BottomNav />
+      <RewardWatcher />
+    </div>
+  )
+}

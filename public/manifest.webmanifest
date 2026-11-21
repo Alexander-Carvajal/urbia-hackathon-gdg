@@ -1,0 +1,16 @@
+{
+  "name": "URBIA Cancún — Inteligencia urbana colaborativa",
+  "short_name": "URBIA",
+  "description": "Prototipo de demostración: reporta y corrobora incidencias urbanas en Cancún.",
+  "lang": "es-MX",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F8FBFF",
+  "theme_color": "#FFFFFF",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

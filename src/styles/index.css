@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+/* Tokens semánticos de URBIA Cancún */
+@theme {
+  --color-bg: #F4F8FC;
+  --color-surface: #FFFFFF;
+  --color-soft: #EAF4FE;
+  --color-primary: #1A82E8;        /* acentos, iconos, foco */
+  --color-primary-strong: #0B66D0; /* CTA y texto azul: contraste AA sobre blanco */
+  --color-primary-hover: #0954AD;
+  --color-navy: #0B2A4E;
+  --color-sky: #2BB5F0;
+  --color-line: #E1EAF3;
+  --color-muted: #5D7590;
+  --color-muted-strong: #4D6780;   /* texto secundario sobre fondos azul pálido */
+  --color-bache: #F07A1E;
+  --color-agua: #1E88E5;
+  --color-inund: #8E5BD6;
+  --color-ok: #1E9E5A;
+  --color-danger: #B42318;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-soft: 0 1px 2px rgb(11 42 78 / 0.04), 0 8px 24px rgb(11 42 78 / 0.06);
+  --shadow-float: 0 12px 36px rgb(11 42 78 / 0.16);
+  --shadow-cta: 0 8px 18px rgb(11 102 208 / 0.28);
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--color-bg);
+    color: var(--color-navy);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.015em; }
+  :focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; border-radius: 8px; }
+  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  }
+}
+
+@layer components {
+  .card { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 18px; box-shadow: var(--shadow-soft); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 12px; font-weight: 600; font-size: 14px; transition: background .15s, border-color .15s, color .15s, box-shadow .15s, filter .15s; cursor: pointer; }
+  .btn:disabled { cursor: not-allowed; opacity: .55; }
+  .btn-primary { background: linear-gradient(180deg, #2C92F3 0%, #0B66D0 100%); color: #fff; box-shadow: var(--shadow-cta); }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
+  .btn-secondary { background: #fff; color: var(--color-navy); border: 1px solid var(--color-line); }
+  .btn-secondary:hover:not(:disabled) { border-color: #B7D6EE; background: #F4FAFF; }
+  .btn-outline { background: #fff; color: var(--color-primary-strong); border: 1.5px solid #9CC8F3; }
+  .btn-outline:hover:not(:disabled) { background: var(--color-soft); }
+  .btn-ghost { color: var(--color-primary-strong); }
+  .btn-ghost:hover:not(:disabled) { background: var(--color-soft); }
+  .input { width: 100%; min-height: 44px; padding: 10px 12px; border-radius: 12px; border: 1px solid #CFDEEC; background: #fff; font-size: 15px; color: var(--color-navy); }
+  .input::placeholder { color: #7A90A4; }
+  .input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgb(26 130 232 / 0.18); }
+  .chip { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 14px; border-radius: 999px; font-size: 14px; font-weight: 600; border: 1px solid var(--color-line); background: #fff; color: var(--color-navy); white-space: nowrap; cursor: pointer; box-shadow: 0 1px 2px rgb(11 42 78 / 0.06); }
+  .chip:hover { border-color: #B7D6EE; }
+  .chip[aria-pressed="true"] { background: #F2F8FF; color: var(--color-primary-strong); border: 1.5px solid var(--color-primary); }
+  .label { font-size: 14px; font-weight: 600; color: var(--color-navy); }
+  .help { font-size: 13px; color: var(--color-muted); line-height: 1.45; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600; }
+  .map-btn { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 12px; background: #fff; color: var(--color-navy); box-shadow: 0 2px 10px rgb(11 42 78 / 0.14); }
+  .map-btn:hover:not(:disabled) { background: #F2F8FF; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+}
+
+/* Leaflet: integración visual */
+.leaflet-container { font-family: var(--font-sans); background: #E9F1F7; }
+.leaflet-control-attribution { font-size: 10px; background: rgb(255 255 255 / 0.85) !important; border-radius: 8px 0 0 0; }
+.leaflet-control-attribution a { color: var(--color-primary-strong); }
+.leaflet-control-scale-line { border-color: var(--color-navy); color: var(--color-navy); background: rgb(255 255 255 / 0.85); font-weight: 600; font-size: 11px; }
+.leaflet-bottom.leaflet-left .leaflet-control-scale { margin-left: 14px; margin-bottom: 14px; }
+.urbia-pin { background: transparent; border: none; }
+.urbia-pin svg { filter: drop-shadow(0 4px 5px rgb(11 42 78 / 0.28)); transition: transform .15s; transform-origin: 50% 100%; }
+.urbia-pin:hover svg { transform: scale(1.08); }
+.urbia-pin.is-selected { z-index: 1000 !important; }
+.urbia-pin.is-selected .pin-body { transform: scale(1.28); transform-origin: 50% 100%; }
+.urbia-pin .pin-frame { position: absolute; inset: 0; pointer-events: none; }
+.urbia-cluster { background: transparent; border: none; }
+.urbia-cluster span { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px; background: #fff; color: var(--color-navy); font-weight: 700; font-size: 14px; border: 3px solid var(--color-sky); box-shadow: 0 4px 12px rgb(11 42 78 / 0.2); }
+.urbia-user { background: transparent; border: none; }
+.urbia-user span { display: block; width: 18px; height: 18px; border-radius: 999px; background: var(--color-primary); border: 3px solid #fff; box-shadow: 0 0 0 6px rgb(26 130 232 / 0.25); }
+
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0 } to { transform: none; opacity: 1 } }
+.animate-sheet { animation: sheet-up .2s ease-out; }
+@keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
+.animate-fade { animation: fade-in .15s ease-out; }
+@keyframes slide-in { from { transform: translateX(-100%) } to { transform: none } }
+.animate-slide { animation: slide-in .2s ease-out; }
+
+/* Inicio: la escala del mapa va sobre la nota «Ubicaciones aproximadas» */
+.map-home .leaflet-bottom.leaflet-left .leaflet-control-scale { margin-bottom: 34px; }
+
+/* Mapa base más suave y frío, como en el diseño */
+.leaflet-tile-pane { filter: saturate(0.62) brightness(1.04) contrast(0.97); }
