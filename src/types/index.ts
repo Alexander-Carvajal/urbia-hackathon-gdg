@@ -45,6 +45,7 @@ export interface Report {
   lng: number
   /** Precisión aproximada del punto en metros */
   accuracyM: number
+  lastConfirmedAt?: string // ISO
   createdAt: string // ISO
   status: Status
   /** true cuando el estado se fijó manualmente (resuelto/descartado) y no lo recalculan las reglas */

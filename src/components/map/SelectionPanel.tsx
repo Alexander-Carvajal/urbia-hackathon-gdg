@@ -8,7 +8,7 @@ import { useCorroboration } from '../../features/reports/actions'
 import { useReports } from '../../features/reports/store'
 import { plural, relativeTime } from '../../lib/format'
 import { haversine } from '../../lib/geo'
-import { confirmationsOf } from '../../lib/rules'
+import { confirmationsOf, isExpired, reportStatus } from '../../lib/rules'
 import type { Report } from '../../types'
 import { CATEGORY_ICON, StatusBadge } from '../ui'
 
@@ -57,7 +57,7 @@ export function HomeReportCard({ report, onClose }: { report: Report; onClose: (
       </div>
       <ReportCover report={report} className="incident-evidence" />
       <h3>{report.title}</h3>
-      <div><StatusBadge status={report.status} long /></div>
+      <div>{isExpired(report) ? <span className="pill bg-bg text-muted">Sin actualización</span> : <StatusBadge status={reportStatus(report)} long />}</div>
       <div className="incident-metadata">
         <span><MapPin size={17} />{report.reference || zoneById(report.zoneId)?.name}</span>
         <span><Clock size={17} />{relativeTime(report.createdAt)}</span>
@@ -107,7 +107,7 @@ export function SidePanel({ report, onClose }: { report: Report; onClose: () => 
       </div>
       <ReportCover report={report} className="report-cover shrink-0 rounded-xl"><span className="absolute bottom-2.5 left-2.5"><CategoryBadge report={report} /></span></ReportCover>
       <h3 className="text-[18px] font-extrabold leading-snug">{report.title}</h3>
-      <div><StatusBadge status={report.status} long /></div>
+      <div>{isExpired(report) ? <span className="pill bg-bg text-muted">Sin actualización</span> : <StatusBadge status={reportStatus(report)} long />}</div>
       <dl className="flex flex-col gap-1.5 text-[14px] text-[#29435E]">
         <div className="flex items-center gap-2"><MapPin size={16} className="shrink-0 text-muted" aria-hidden="true" /><dd>{zone?.name}{zone ? ` – ${zone.hint}` : ''}</dd></div>
         <div className="flex items-center gap-2"><Clock size={16} className="shrink-0 text-muted" aria-hidden="true" /><dd>{relativeTime(report.createdAt).replace(/^./, (m) => m.toUpperCase())}</dd></div>
@@ -155,7 +155,7 @@ export function FloatingPanel({ report, onClose }: { report: Report; onClose: ()
         </div>
         {expanded && <ReportCover report={report} className="h-[140px] rounded-xl" />}
         <h2 className="text-[18px] font-extrabold leading-snug">{report.title}</h2>
-        <div className="flex flex-wrap items-center gap-2 text-[13px] text-muted"><StatusBadge status={report.status} /><span>{zone?.name} · {plural(confirmationsOf(report), 'confirmación', 'confirmaciones')}</span></div>
+        <div className="flex flex-wrap items-center gap-2 text-[13px] text-muted">{isExpired(report) ? <span className="pill bg-bg text-muted">Sin actualización</span> : <StatusBadge status={reportStatus(report)} />}<span>{zone?.name} · {plural(confirmationsOf(report), 'confirmación', 'confirmaciones')}</span></div>
         {expanded && <p className="text-sm leading-relaxed text-[#29435E]">{report.description}</p>}
         <button type="button" className="btn btn-ghost !min-h-9 self-start !px-2 text-[13px]" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
           {expanded ? <>Ver menos <ChevronDown size={15} /></> : <>Ver más <ChevronUp size={15} /></>}

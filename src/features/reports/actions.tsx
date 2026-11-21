@@ -5,6 +5,7 @@ import { useToast } from '../../components/ui/Toast'
 import { Modal } from '../../components/ui'
 import { accessUrl } from '../auth/demoSession'
 import type { ObjectionReason, Report } from '../../types'
+import { reportStatus } from '../../lib/rules'
 import { useReports } from './store'
 
 /** Estado del botón «Yo también lo observé» para el usuario demo actual. */
@@ -15,7 +16,7 @@ export function useCorroboration(report: Report | undefined) {
   const location = useLocation()
   const own = !!demoProfile && !!report && report.authorId === user.id
   const done = !!demoProfile && !!report && hasConfirmed(report)
-  const closed = !!report && (report.status === 'resuelto' || report.status === 'descartado')
+  const closed = !!report && (reportStatus(report) === 'resuelto' || reportStatus(report) === 'descartado')
   const reason = closed ? 'Este reporte ya está cerrado.' : !demoProfile ? 'Inicia sesión para corroborar.' : own ? 'No puedes corroborar tu propio reporte.' : done ? 'Ya registraste tu confirmación en este navegador.' : ''
   const run = () => {
     if (!report) return
@@ -46,7 +47,7 @@ const REASONS: { id: ObjectionReason; label: string }[] = [
   { id: 'no-existe', label: 'No existe o no lo encontré en el lugar' },
   { id: 'ubicacion', label: 'La ubicación es incorrecta' },
   { id: 'duplicado', label: 'Es un duplicado de otro reporte' },
-  { id: 'resuelto', label: 'Ya fue atendido' },
+  { id: 'resuelto', label: 'Ya no está o fue atendido' },
   { id: 'otro', label: 'Otro motivo' },
 ]
 
@@ -77,7 +78,7 @@ export function ObjectionButton({ report }: { report: Report }) {
       </button>
       <Modal open={open} title="Información incorrecta" onClose={() => setOpen(false)}
         footer={<><button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>Cancelar</button><button type="button" className="btn btn-primary" onClick={submit}>Enviar objeción</button></>}>
-        <p className="help mb-4">Tu objeción se guarda en este navegador y se suma al historial del reporte. No elimina el reporte.</p>
+        <p className="help mb-4">Tu observación se añade al historial. Si dos vecinos indican que la incidencia ya no está desde la última observación, se marca como resuelta.</p>
         <fieldset className="flex flex-col gap-2">
           <legend className="label mb-2">Motivo</legend>
           {REASONS.map((r) => (

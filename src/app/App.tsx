@@ -11,6 +11,7 @@ import { ReportsProvider, useReports } from '../features/reports/store'
 import { accessUrl } from '../features/auth/demoSession'
 import { Layout } from './Layout'
 import { AccessPage } from './pages/AccessPage'
+import { RoutePage } from './pages/RoutePage'
 import { HomePage } from './pages/Home'
 import { MapPage } from './pages/MapPage'
 import { ProfilePage } from './pages/ProfilePage'
@@ -44,6 +45,7 @@ export function App() {
             <Route element={<Layout />}>
               <Route index element={<HomePage />} />
               <Route path="mapa" element={<MapPage />} />
+              <Route path="trayecto" element={<RoutePage />} />
               <Route path="reportes" element={<ReportsPage />} />
               <Route path="reportes/:id" element={<ReportDetail />} />
               <Route path="reportar" element={<RequireDemoSession><NewReportPage /></RequireDemoSession>} />

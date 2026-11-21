@@ -1,10 +1,11 @@
-import { BarChart3, Bell, Check, ChevronDown, Cloud, CloudOff, Database, Droplets, FileText, House, Loader2, Map as MapIcon, MapPin, Menu, Plus, RefreshCw, Search, ShieldCheck, User, X } from 'lucide-react'
+import { BarChart3, Bell, Check, ChevronDown, Cloud, CloudOff, Database, Droplets, FileText, House, Loader2, Map as MapIcon, MapPin, Menu, Plus, RefreshCw, Search, Route as RouteIcon, ShieldCheck, User, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Logo, SidebarArt } from '../components/brand/Brand'
 import { accessUrl } from '../features/auth/demoSession'
 import { useReports } from '../features/reports/store'
 import { RewardWatcher } from '../features/rewards/RewardsUI'
+import { isActive, reportStatus } from '../lib/rules'
 import { relativeTime } from '../lib/format'
 
 function useOutside(open: boolean, close: () => void) {
@@ -20,15 +21,15 @@ function useOutside(open: boolean, close: () => void) {
 }
 
 function Notifications() {
-  const { reports, user } = useReports()
+  const { reports, user, freshnessTick } = useReports()
   const [open, setOpen] = useState(false)
   const [seen, setSeen] = useState<string[]>([])
   const ref = useOutside(open, () => setOpen(false))
   const items = useMemo(() => {
-    const mine = reports.filter((r) => r.authorId === user.id).map((r) => ({ id: 'm' + r.id + r.history.length, to: `/reportes/${r.id}`, text: `Tu reporte «${r.title}» está ${r.status === 'pendiente' ? 'pendiente de confirmaciones' : 'en estado ' + r.status}`, at: r.history[r.history.length - 1].at }))
-    const recent = [...reports].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 4).map((r) => ({ id: 'n' + r.id, to: `/reportes/${r.id}`, text: `Nuevo reporte cerca: ${r.title}`, at: r.createdAt }))
+    const mine = reports.filter((r) => r.authorId === user.id).map((r) => ({ id: 'm' + r.id + r.history.length, to: `/reportes/${r.id}`, text: `Tu reporte «${r.title}» está ${reportStatus(r) === 'pendiente' ? 'pendiente de confirmaciones' : 'en estado ' + reportStatus(r)}`, at: r.history[r.history.length - 1].at }))
+    const recent = reports.filter(isActive).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 4).map((r) => ({ id: 'n' + r.id, to: `/reportes/${r.id}`, text: `Nuevo reporte cerca: ${r.title}`, at: r.createdAt }))
     return [...mine, ...recent].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 5)
-  }, [reports, user.id])
+  }, [reports, user.id, freshnessTick])
   const unread = items.filter((i) => !seen.includes(i.id)).length
   return (
     <div className="relative" ref={ref}>
@@ -105,6 +106,7 @@ function SyncStatus() {
 const MAIN_NAV = [
   { to: '/', label: 'Inicio', icon: House },
   { to: '/mapa', label: 'Mapa de incidencias', icon: MapIcon },
+  { to: '/trayecto', label: 'Planear trayecto', icon: RouteIcon },
   { to: '/reportes', label: 'Reportes ciudadanos', icon: FileText },
   { to: '/analisis', label: 'Conexiones urbanas', icon: BarChart3 },
 ]

@@ -35,7 +35,7 @@ interface ReportRow {
   source: Report['source']; author_id: string; author_alias: string; base_confirmations: number; base_evidence: number
   photo: string | null; imported_from: string | null; is_demo_seed: boolean
 }
-interface ConfirmationRow { report_id: string; user_id: string }
+interface ConfirmationRow { report_id: string; user_id: string; created_at: string }
 interface ObjectionRow { id: string; report_id: string; user_id: string; reason: ObjectionReason; detail: string; created_at: string }
 interface HistoryRow { report_id: string; at: string; text: string; by: string; status: Status | null }
 
@@ -57,7 +57,7 @@ async function selectAll<T>(table: string, columns: string, order?: string): Pro
 export async function fetchReports(): Promise<Report[]> {
   const [rows, conf, obj, hist] = await Promise.all([
     selectAll<ReportRow>('reports', '*'),
-    selectAll<ConfirmationRow>('confirmations', 'report_id,user_id'),
+    selectAll<ConfirmationRow>('confirmations', 'report_id,user_id,created_at', 'created_at'),
     selectAll<ObjectionRow>('objections', 'id,report_id,user_id,reason,detail,created_at'),
     selectAll<HistoryRow>('history', 'report_id,at,text,by,status', 'at'),
   ])
@@ -68,7 +68,7 @@ export async function fetchReports(): Promise<Report[]> {
       id: r.id, title: r.title, category: r.category, description: r.description, zoneId: r.zone_id, reference: r.reference,
       lat: r.lat, lng: r.lng, accuracyM: r.accuracy_m, createdAt: r.created_at, status: r.status, statusLocked: r.status_locked,
       statusReason: r.status_reason ?? undefined, source: r.source, authorId: r.author_id, authorAlias: r.author_alias,
-      baseConfirmations: r.base_confirmations, confirmedBy: (c[r.id] ?? []).map((x) => x.user_id), baseEvidence: r.base_evidence,
+      lastConfirmedAt: c[r.id]?.at(-1)?.created_at, baseConfirmations: r.base_confirmations, confirmedBy: (c[r.id] ?? []).map((x) => x.user_id), baseEvidence: r.base_evidence,
       photo: r.photo, isDemoSeed: r.is_demo_seed, importedFrom: r.imported_from ?? undefined,
       objections: (o[r.id] ?? []).map((x): Objection => ({ id: x.id, at: x.created_at, reason: x.reason, detail: x.detail, by: x.user_id })),
       history: (h[r.id] ?? []).map((x): HistoryEntry => ({ at: x.at, text: x.text, by: x.by, status: x.status ?? undefined })),

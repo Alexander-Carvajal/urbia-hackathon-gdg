@@ -1,9 +1,10 @@
-import { TriangleAlert as AlertIcon, Droplet, CloudRain, Clock, Eye, CircleCheck, Check, CircleX, X, Info, TriangleAlert, type LucideIcon } from 'lucide-react'
+import { Clock, Eye, CircleCheck, Check, CircleX, X, Info, TriangleAlert, type LucideIcon } from 'lucide-react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { CATEGORIES, STATUSES } from '../../data/categories'
 import type { CategoryId, Status } from '../../types'
 
-export const CATEGORY_ICON: Record<CategoryId, LucideIcon> = { bache: AlertIcon, agua: Droplet, inundacion: CloudRain }
+import { CATEGORY_ICON } from '../map/categorySymbols'
+export { CATEGORY_ICON }
 const STATUS_ICON: Record<Status, LucideIcon> = { pendiente: Clock, revision: Eye, corroborado: Check, resuelto: CircleCheck, descartado: CircleX }
 
 export function StatusBadge({ status, long = false }: { status: Status; long?: boolean }) {

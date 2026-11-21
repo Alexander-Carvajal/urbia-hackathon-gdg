@@ -3,7 +3,7 @@ import { useMap } from 'react-leaflet'
 import { WaterloggingLayer, WaterloggingSymbol, waterloggingPoints } from '../../components/map/WaterloggingLayer'
 import { Layers, Search, SearchX, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { LayerChips, MenuOption, PopoverButton } from '../../components/map/CategoryChips'
 import { ReportDensityLayer, TemperatureLayer, useTemperature, type TempMode } from '../../components/map/HeatLayers'
 import { HeatLegend, MapLayersMenu, type HeatLayer } from '../../components/map/HeatLegend'
@@ -13,10 +13,11 @@ import { CATEGORY_IDS, STATUSES, STATUS_ORDER } from '../../data/categories'
 import { AvisosLayer, useMappableAvisos } from '../../features/avisos/AvisosProvider'
 import { WeatherStrip } from '../../features/avisos/Weather'
 import { useReports } from '../../features/reports/store'
+import { isActive, isExpired, reportStatus } from '../../lib/rules'
 import { searchPlaces } from '../../lib/search'
 import type { CategoryId, Status } from '../../types'
 
-type StatusFilter = 'activos' | 'todos' | Status
+type StatusFilter = 'activos' | 'todos' | 'vencido' | Status
 
 function SearchExtent({ locations }: { locations: { lat: number; lng: number }[] }) {
   const map = useMap()
@@ -27,7 +28,7 @@ function SearchExtent({ locations }: { locations: { lat: number; lng: number }[]
 }
 
 export function MapPage() {
-  const { reports } = useReports()
+  const { reports, freshnessTick } = useReports()
   const [params, setParams] = useSearchParams()
   const [cats, setCats] = useState<CategoryId[]>(CATEGORY_IDS)
   const [status, setStatus] = useState<StatusFilter>('activos')
@@ -54,7 +55,7 @@ export function MapPage() {
   useEffect(() => { setQ(urlQ); setApplied(urlQ) }, [urlQ])
 
   const byStatus = useMemo(() => reports.filter((r) =>
-    status === 'todos' ? true : status === 'activos' ? r.status !== 'resuelto' && r.status !== 'descartado' : r.status === status), [reports, status])
+    status === 'todos' ? true : status === 'activos' ? isActive(r) : status === 'vencido' ? isExpired(r) : !isExpired(r) && reportStatus(r) === status), [reports, status, freshnessTick])
   const search = useMemo(() => searchPlaces(applied, byStatus), [applied, byStatus])
   const visible = useMemo(() => search.reports.filter(r => cats.includes(r.category)), [search, cats])
   const inventoryVisible = showWaterlogging && cats.includes('inundacion')
@@ -95,7 +96,7 @@ export function MapPage() {
       </div>
 
       <div className="card flex flex-wrap items-center gap-3 px-4 py-3">
-        <span className="text-[15px] font-bold">Capas visibles</span>
+        <span className="text-[15px] font-bold">Capas visibles</span><span className="text-xs text-muted">El pin gana intensidad con las confirmaciones.</span><Link className="btn btn-outline" to="/trayecto">Planear trayecto</Link>
         <LayerChips value={cats} onChange={setCats} className="-mx-1 px-1" />
         <span className="hidden h-8 w-px bg-line sm:block" aria-hidden="true" />
         <PopoverButton label="Más filtros" icon="filters" variant="chip" align="left">
@@ -103,6 +104,7 @@ export function MapPage() {
           <select id="status-filter" value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)} className="input mb-3">
             <option value="activos">Activos</option>
             <option value="todos">Todos</option>
+            <option value="vencido">Sin actualización</option>
             {STATUS_ORDER.map((s) => <option key={s} value={s}>{STATUSES[s].long}</option>)}
           </select>
           <p className="mb-1 px-1 text-xs font-bold uppercase tracking-wide text-muted">Mapa de calor</p>

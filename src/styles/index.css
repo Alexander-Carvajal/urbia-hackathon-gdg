@@ -86,7 +86,14 @@
 .urbia-cluster { background: transparent; border: none; }
 .urbia-cluster span { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px; background: #fff; color: var(--color-navy); font-weight: 700; font-size: 14px; border: 3px solid var(--color-sky); box-shadow: 0 4px 12px rgb(11 42 78 / 0.2); }
 .urbia-user { background: transparent; border: none; }
-.urbia-user span { display: block; width: 18px; height: 18px; border-radius: 999px; background: var(--color-primary); border: 3px solid #fff; box-shadow: 0 0 0 6px rgb(26 130 232 / 0.25); }
+.urbia-user span, .urbia-route-origin span {
+  display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%;
+  background: #b42318; border: 2px solid white; color: white; font-size: 12px; font-weight: 800;
+  box-shadow: 0 0 0 5px rgb(180 35 24 / .17), 0 2px 8px rgb(11 42 78 / .22);
+}
+.urbia-user span::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: white; }
+.route-origin-action { color: #9b2018; border-color: #efc6c2; }
+.route-origin-action:hover, .route-origin-action[aria-pressed="true"] { background: #fce8e6; }
 
 @keyframes sheet-up { from { transform: translateY(24px); opacity: 0 } to { transform: none; opacity: 1 } }
 .animate-sheet { animation: sheet-up .2s ease-out; }
@@ -215,4 +222,23 @@ body:has(.mobile-menu[open]) { overflow: hidden; }
 @media (max-width: 47.99rem) {
   .map-dashboard { padding: 14px 16px; gap: 12px; }
   .map-home .leaflet-control-attribution { max-width: 70vw; }
+}
+
+/* La opacidad recae sobre el cuerpo, no sobre el marco de selección. */
+@property --urbia-pin-opacity {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+.urbia-pin { transition: --urbia-pin-opacity .26s ease; }
+.urbia-pin .pin-body { opacity: var(--urbia-pin-opacity, 1); }
+.pin-confidence-0 { --urbia-pin-opacity: .53; }
+.pin-confidence-1 { --urbia-pin-opacity: .7; }
+.pin-confidence-2 { --urbia-pin-opacity: .85; }
+@keyframes pin-focus { from { opacity: .18; } to { opacity: 1; } }
+.urbia-pin.is-selected .pin-frame { animation: pin-focus .32s ease-out; }
+.route-report-preview { animation: sheet-up .22s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .urbia-pin { transition: none; }
+  .urbia-pin.is-selected .pin-frame, .route-report-preview { animation: none; }
 }

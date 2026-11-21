@@ -6,6 +6,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster'
 import { CATEGORIES, CATEGORY_IDS } from '../../data/categories'
 import { CANCUN_CENTER, CANCUN_ZOOM } from '../../data/zones'
 import { inCancunArea } from '../../lib/geo'
+import { confirmationsOf } from '../../lib/rules'
 import type { Report } from '../../types'
 import { useToast } from '../ui/Toast'
 import { clusterIcon, draftPinIcon, pinIcon, pinSvg, userIcon } from './pins'
@@ -67,7 +68,7 @@ function TileStatus({ state }: { state: TileState }) {
   )
 }
 
-function MapButtons({ map, onLocated, layers }: { map: L.Map | null; onLocated: (p: { lat: number; lng: number; acc: number }) => void; layers?: ReactNode }) {
+function MapButtons({ map, onLocated, layers, showLocation }: { map: L.Map | null; onLocated: (p: { lat: number; lng: number; acc: number }) => void; layers?: ReactNode; showLocation: boolean }) {
   const toast = useToast()
   const [busy, setBusy] = useState(false)
   const locate = () => {
@@ -89,9 +90,9 @@ function MapButtons({ map, onLocated, layers }: { map: L.Map | null; onLocated: 
     <>
       <div className="absolute right-3 top-3 z-[600] flex flex-col gap-2.5">
         {layers}
-        <button type="button" className="map-btn disabled:opacity-60" aria-label="Mostrar mi ubicación" onClick={locate} disabled={busy}>
+        {showLocation && <button type="button" className="map-btn !text-danger disabled:opacity-60" aria-label="Mostrar mi ubicación" onClick={locate} disabled={busy}>
           {busy ? <Loader2 size={19} className="animate-spin" /> : <LocateFixed size={19} />}
-        </button>
+        </button>}
       </div>
       <div className="absolute bottom-6 right-3 z-[600] flex flex-col overflow-hidden rounded-xl bg-white shadow-[0_2px_10px_rgb(11_42_78/0.14)]">
         <button type="button" className="flex h-11 w-11 items-center justify-center text-navy hover:bg-soft" aria-label="Acercar" onClick={() => map?.zoomIn()}><Plus size={19} /></button>
@@ -152,6 +153,7 @@ interface Props {
   /** Botón/menú de capas que se muestra arriba a la derecha */
   layers?: ReactNode
   /** Se llama con los reportes dentro de la vista actual del mapa */
+  showLocationControl?: boolean
   onViewChange?: (visible: number) => void
 }
 
@@ -167,14 +169,14 @@ function ViewWatcher({ reports, onChange }: { reports: Report[]; onChange: (n: n
   return null
 }
 
-export function UrbiaMap({ reports, selectedId, onSelect, flyTo, topLeft, overlay, className = '', cluster = true, extraLayer, showAvisosLegend = false, legend = 'toggle', layers, onViewChange }: Props) {
+export function UrbiaMap({ reports, selectedId, onSelect, flyTo, topLeft, overlay, className = '', cluster = true, extraLayer, showAvisosLegend = false, legend = 'toggle', layers, onViewChange, showLocationControl = true }: Props) {
   const [map, setMap] = useState<L.Map | null>(null)
   const [me, setMe] = useState<{ lat: number; lng: number; acc: number } | null>(null)
   const tiles = useTileState()
 
   const markers = reports.map((r) => (
-    <Marker key={r.id} position={[r.lat, r.lng]} icon={pinIcon(r.category, r.id === selectedId)}
-      title={`${CATEGORIES[r.category].label}: ${r.title}`} alt={`${CATEGORIES[r.category].label}: ${r.title}`}
+    <Marker key={r.id} position={[r.lat, r.lng]} icon={pinIcon(r.category, r.id === selectedId, confirmationsOf(r))}
+      title={`${CATEGORIES[r.category].label}: ${r.title} · ${confirmationsOf(r)} confirmaciones`} alt={`${CATEGORIES[r.category].label}: ${r.title} · ${confirmationsOf(r)} confirmaciones`}
       keyboard zIndexOffset={r.id === selectedId ? 1000 : 0}
       eventHandlers={{ click: () => onSelect(r.id), keypress: (e) => { if ((e.originalEvent as KeyboardEvent).key === 'Enter') onSelect(r.id) } }} />
   ))
@@ -192,10 +194,10 @@ export function UrbiaMap({ reports, selectedId, onSelect, flyTo, topLeft, overla
         {extraLayer}
         <ScaleControl position="bottomleft" imperial={false} maxWidth={110} />
         {onViewChange && <ViewWatcher reports={reports} onChange={onViewChange} />}
-        {me && <><Circle center={[me.lat, me.lng]} radius={Math.min(me.acc, 500)} pathOptions={{ color: '#1A82E8', weight: 1, fillOpacity: 0.08 }} /><Marker position={[me.lat, me.lng]} icon={userIcon} title="Tu ubicación aproximada" /></>}
+        {me && <><Circle center={[me.lat, me.lng]} radius={Math.min(me.acc, 500)} pathOptions={{ color: '#B42318', weight: 1, fillOpacity: 0.08 }} /><Marker position={[me.lat, me.lng]} icon={userIcon} title="Tu ubicación aproximada" /></>}
       </MapContainer>
       {topLeft && <div className="pointer-events-none absolute left-3 right-16 top-3 z-[600]"><div className="pointer-events-auto">{topLeft}</div></div>}
-      <MapButtons map={map} onLocated={setMe} layers={layers} />
+      <MapButtons map={map} onLocated={setMe} layers={layers} showLocation={showLocationControl} />
       {legend === 'toggle' && <Legend avisos={showAvisosLegend} />}
       {legend === 'box' && <LegendBox avisos={showAvisosLegend} />}
       <TileStatus state={tiles.state} />
@@ -236,7 +238,7 @@ export function MiniMap({ report, className = '' }: { report: Report; className?
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} eventHandlers={tiles.handlers} />
         <AutoResize />
         <Circle center={[report.lat, report.lng]} radius={report.accuracyM} pathOptions={{ color: CATEGORIES[report.category].color, weight: 1.5, fillOpacity: 0.12 }} />
-        <Marker position={[report.lat, report.lng]} icon={pinIcon(report.category)} interactive={false} />
+        <Marker position={[report.lat, report.lng]} icon={pinIcon(report.category, false, confirmationsOf(report))} interactive={false} />
       </MapContainer>
       <TileStatus state={tiles.state} />
     </div>

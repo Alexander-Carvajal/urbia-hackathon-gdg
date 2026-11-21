@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useToast } from '../../components/ui/Toast'
 import { buildSeed } from '../../data/seed'
 import { clearDemoSession, loadDemoSession, resolveDemoUser, saveDemoSession, type DemoProfile } from '../auth/demoSession'
-import { applyRules } from '../../lib/rules'
+import { CONFIRMATION_EVENT, reportStatus, applyRules } from '../../lib/rules'
 import { clearState, loadState, loadUser, newId, saveState, saveUser } from '../../lib/storage'
 import { ensureAuthUser, fetchReports, hasSupabase, insertConfirmation, insertObjection, insertReports, subscribeChanges } from '../../lib/supabase'
 import type { CategoryId, DemoUser, ObjectionReason, Report } from '../../types'
@@ -30,6 +30,7 @@ export type Backend = { kind: 'local' } | { kind: 'supabase'; status: 'connectin
 
 interface Store {
   reports: Report[]
+  freshnessTick: number
   user: DemoUser
   demoProfile: DemoProfile | null
   signInDemo: (id: string) => boolean
@@ -68,6 +69,13 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
   const [backend, setBackend] = useState<Backend>(hasSupabase ? { kind: 'supabase', status: 'connecting' } : { kind: 'local' })
   const [ready, setReady] = useState(!hasSupabase)
   const alive = useRef(true)
+  const [freshnessTick, setFreshnessTick] = useState(Date.now)
+  useEffect(() => {
+    const refresh = () => setFreshnessTick(Date.now())
+    const timer = window.setInterval(refresh, 15000)
+    document.addEventListener('visibilitychange', refresh)
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', refresh) }
+  }, [])
 
   useEffect(() => {
     if (hasSupabase) return
@@ -153,13 +161,13 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
     if (!r) return 'missing'
     if (r.authorId === user.id) return 'own'
     if (r.confirmedBy.includes(user.id)) return 'already'
-    if (r.status === 'descartado' || r.status === 'resuelto') return 'closed'
+    if (reportStatus(r) === 'descartado' || reportStatus(r) === 'resuelto') return 'closed'
     const now = new Date().toISOString()
     setState((s) => ({
       ...s,
       reports: s.reports.map((x) => x.id !== id ? x : applyRules({
-        ...x, confirmedBy: [...x.confirmedBy, user.id],
-        history: [...x.history, { at: now, by: user.alias, text: '«Yo también lo observé»: +1 confirmación' }],
+        ...x, lastConfirmedAt: now, confirmedBy: [...x.confirmedBy, user.id],
+        history: [...x.history, { at: now, by: user.alias, text: CONFIRMATION_EVENT }],
       }, 'Regla demo', now)),
     }))
     remote(() => insertConfirmation(id, user.alias))
@@ -193,8 +201,8 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
     setState({ reports: buildSeed(), seededAt: new Date().toISOString() })
   }, [reload])
 
-  const value = useMemo<Store>(() => ({ reports: state.reports, user, demoProfile, signInDemo, signOutDemo, persistent, backend, ready, reload, getReport, addReport, importReports, confirm, object, hasConfirmed, hasObjected, resetDemo }),
-    [state.reports, user, demoProfile, signInDemo, signOutDemo, persistent, backend, ready, reload, getReport, addReport, importReports, confirm, object, hasConfirmed, hasObjected, resetDemo])
+  const value = useMemo<Store>(() => ({ reports: state.reports, freshnessTick, user, demoProfile, signInDemo, signOutDemo, persistent, backend, ready, reload, getReport, addReport, importReports, confirm, object, hasConfirmed, hasObjected, resetDemo }),
+    [state.reports, freshnessTick, user, demoProfile, signInDemo, signOutDemo, persistent, backend, ready, reload, getReport, addReport, importReports, confirm, object, hasConfirmed, hasObjected, resetDemo])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

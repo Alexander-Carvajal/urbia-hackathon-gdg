@@ -10,7 +10,7 @@ import { CorroborateButton, ObjectionButton } from '../../features/reports/actio
 import { useReports } from '../../features/reports/store'
 import { fullDate, relativeTime, plural } from '../../lib/format'
 import { formatDistance, haversine } from '../../lib/geo'
-import { confirmationsOf, evidenceOf, RULE_TEXT } from '../../lib/rules'
+import { confirmationsOf, evidenceOf, isExpired, lastObservation, reportStatus, RULE_TEXT } from '../../lib/rules'
 
 export function ReportDetail() {
   const { id = '' } = useParams()
@@ -46,7 +46,7 @@ export function ReportDetail() {
         <article className="card flex flex-col gap-4 p-5 md:p-6">
           <div className="flex flex-wrap items-center gap-2">
             <CategoryTag category={r.category} size="md" />
-            <StatusBadge status={r.status} long />
+            <StatusBadge status={reportStatus(r)} long />
             <span className="text-xs text-muted">ID {r.id}</span>
           </div>
           <h1 className="text-[24px] font-extrabold leading-tight md:text-[28px]">{r.title}</h1>
@@ -69,6 +69,8 @@ export function ReportDetail() {
             <p className="text-[15px] leading-relaxed text-[#29435E]">{r.description}</p>
           </section>
 
+          {isExpired(r) && <Notice tone="warn">Sin actualización. Este reporte salió de las vistas activas. Última observación: {fullDate(lastObservation(r))}.</Notice>}
+          {reportStatus(r) === 'resuelto' && r.status !== 'resuelto' && <Notice>Dos vecinos indicaron que la incidencia ya no está o fue atendida.</Notice>}
           {r.statusReason && <Notice tone={r.status === 'descartado' ? 'warn' : 'info'}><strong>{STATUSES[r.status].long}:</strong> {r.statusReason}</Notice>}
 
           <section aria-labelledby="hist-h">

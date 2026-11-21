@@ -15,7 +15,7 @@ import { WeatherCard, WeatherPill } from '../../features/avisos/Weather'
 import { detectConnections } from '../../features/connections/detect'
 import { useReports } from '../../features/reports/store'
 import { plural, relativeTime } from '../../lib/format'
-import { confirmationsOf, isActive } from '../../lib/rules'
+import { confirmationsOf, isActive, reportStatus } from '../../lib/rules'
 import { SearchBox } from '../Layout'
 
 function Kpi({ icon: I, tone, value, label, hint }: { icon: typeof Megaphone; tone: 'orange' | 'green' | 'blue'; value: number; label: string; hint: string }) {
@@ -37,7 +37,7 @@ function DemoPill({ children }: { children: ReactNode }) {
 }
 
 export function HomePage() {
-  const { reports } = useReports()
+  const { reports, freshnessTick } = useReports()
   const [cat, setCat] = useState<CategoryFilter>('todos')
   const [sel, setSel] = useState<string | null>(null)
   const [inView, setInView] = useState(0)
@@ -47,21 +47,21 @@ export function HomePage() {
   const [showAvisos, setShowAvisos] = useState(true)
   const temp = useTemperature(heat === 'temperatura')
 
-  const active = useMemo(() => reports.filter(isActive), [reports])
+  const active = useMemo(() => reports.filter(isActive), [reports, freshnessTick])
   const visible = useMemo(() => (cat === 'todos' ? active : active.filter((r) => r.category === cat)), [active, cat])
   const kpi = {
     active: active.length,
     unconfirmed: active.filter((r) => confirmationsOf(r) === 0).length,
-    corroborated: reports.filter((r) => r.status === 'corroborado').length,
+    corroborated: active.filter((r) => reportStatus(r) === 'corroborado').length,
     zones: new Set(active.map((r) => r.zoneId)).size,
   }
   // Reporte destacado: el activo con más confirmaciones (se muestra aunque no se haya tocado un pin)
   const featured = useMemo(() => [...active].sort((a, b) => confirmationsOf(b) - confirmationsOf(a))[0], [active])
-  const selected = sel ? reports.find((r) => r.id === sel) : undefined
+  const selected = sel ? active.find((r) => r.id === sel) : undefined
   const card = selected ?? (cardOpen ? featured : undefined)
   const nearby = useMemo(() => [...active].sort((a, b) => (b.status === 'corroborado' ? 1 : 0) - (a.status === 'corroborado' ? 1 : 0) || confirmationsOf(b) - confirmationsOf(a)).slice(0, 4), [active])
 
-  const connection = useMemo(() => detectConnections(reports)[0], [reports])
+  const connection = useMemo(() => detectConnections(reports)[0], [reports, freshnessTick])
   const { avisos } = useAvisos()
   const mapAvisos = useMappableAvisos(14)
   const latest = (avisos.data ?? []).filter((a) => a.city !== 'otra').slice(0, 3)
@@ -147,7 +147,7 @@ export function HomePage() {
                 <CategoryDot category={r.category} size={42} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15px] font-bold">{r.title}</span>
-                  <span className="flex items-center gap-1.5 text-[12px] text-muted"><StatusBadge status={r.status} /> {plural(confirmationsOf(r), 'confirmación', 'confirmaciones')}</span>
+                  <span className="flex items-center gap-1.5 text-[12px] text-muted"><StatusBadge status={reportStatus(r)} /> {plural(confirmationsOf(r), 'confirmación', 'confirmaciones')}</span>
                 </span>
               </Link>
             </li>

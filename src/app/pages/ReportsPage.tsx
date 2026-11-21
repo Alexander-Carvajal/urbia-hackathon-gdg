@@ -7,13 +7,13 @@ import { zoneById } from '../../data/zones'
 import { useReports } from '../../features/reports/store'
 import { relativeTime } from '../../lib/format'
 import { norm } from '../../lib/geo'
-import { confirmationsOf, evidenceOf } from '../../lib/rules'
+import { confirmationsOf, evidenceOf, isExpired, reportStatus } from '../../lib/rules'
 import type { CategoryId, Status } from '../../types'
 
 export function ReportsPage() {
-  const { reports, user } = useReports()
+  const { reports, user, freshnessTick } = useReports()
   const [q, setQ] = useState('')
-  const [status, setStatus] = useState<'todos' | Status>('todos')
+  const [status, setStatus] = useState<'todos' | 'vencido' | Status>('todos')
   const [cat, setCat] = useState<'todos' | CategoryId>('todos')
   const [sort, setSort] = useState<'recientes' | 'confirmaciones'>('recientes')
 
@@ -22,12 +22,12 @@ export function ReportsPage() {
     return reports.filter((r) => (cat === 'todos' || r.category === cat) && (!nq || norm(`${r.title} ${r.description} ${r.reference} ${zoneById(r.zoneId)?.name ?? ''}`).includes(nq)))
   }, [reports, q, cat])
   const list = useMemo(() => {
-    const l = status === 'todos' ? searched : searched.filter((r) => r.status === status)
+    const l = status === 'todos' ? searched : searched.filter((r) => status === 'vencido' ? isExpired(r) : !isExpired(r) && reportStatus(r) === status)
     return [...l].sort((a, b) => sort === 'recientes' ? b.createdAt.localeCompare(a.createdAt) : confirmationsOf(b) - confirmationsOf(a))
-  }, [searched, status, sort])
+  }, [searched, status, sort, freshnessTick])
 
-  const tabs: ('todos' | Status)[] = ['todos', ...STATUS_ORDER]
-  const plurals: Record<string, string> = { todos: 'Todos', pendiente: 'Pendientes', revision: 'En revisión', corroborado: 'Corroborados', resuelto: 'Resueltos', descartado: 'Descartados' }
+  const tabs: ('todos' | 'vencido' | Status)[] = ['todos', ...STATUS_ORDER, 'vencido']
+  const plurals: Record<string, string> = { todos: 'Todos', vencido: 'Sin actualización', pendiente: 'Pendientes', revision: 'En revisión', corroborado: 'Corroborados', resuelto: 'Resueltos', descartado: 'Descartados' }
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4 md:px-8 md:py-7">
@@ -54,7 +54,7 @@ export function ReportsPage() {
       <div role="group" aria-label="Filtrar por estado" className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">
         {tabs.map((t) => (
           <button key={t} type="button" className="chip" aria-pressed={status === t} onClick={() => setStatus(t)}>
-            {plurals[t]} <span className="opacity-70">{t === 'todos' ? searched.length : searched.filter((r) => r.status === t).length}</span>
+            {plurals[t]} <span className="opacity-70">{t === 'todos' ? searched.length : searched.filter((r) => t === 'vencido' ? isExpired(r) : !isExpired(r) && reportStatus(r) === t).length}</span>
           </button>
         ))}
       </div>
@@ -70,7 +70,7 @@ export function ReportsPage() {
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <h2 className="text-[15px] font-bold leading-snug">{r.title}</h2>
-                    <StatusBadge status={r.status} />
+                    {isExpired(r) ? <span className="pill bg-bg text-muted">Sin actualización</span> : <StatusBadge status={reportStatus(r)} />}
                   </div>
                   <p className="line-clamp-2 text-[13px] leading-relaxed text-[#3D5873]">{r.description}</p>
                   <div className="mt-auto flex flex-wrap gap-x-4 gap-y-1 pt-1 text-xs text-muted">
