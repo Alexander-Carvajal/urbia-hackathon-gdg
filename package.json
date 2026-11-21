@@ -11,6 +11,7 @@
     "typecheck": "tsc -b",
     "seed:sql": "node scripts/gen-seed.mjs",
     "api": "node server/index.mjs",
+    "test:auth": "node --test src/features/auth/*.test.mjs",
     "test:api": "node --test server/*.test.mjs"
   },
   "dependencies": {

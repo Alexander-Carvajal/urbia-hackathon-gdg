@@ -39,7 +39,7 @@ El navegador se sirve como aplicación estática. `src/app/App.tsx` define las r
 
 ## Estado y persistencia
 
-`ReportsProvider` ofrece reportes, usuario, estado del backend y acciones. Sin credenciales de Supabase, carga `urbia-cancun:v1` de `localStorage`; si no existe, genera la semilla ficticia con fechas relativas al primer inicio. El alias e ID demo se guardan por navegador. Con credenciales, la app obtiene una sesión anónima de Supabase, lee las tablas compartidas y escucha cambios en tiempo real. El modo Supabase no carga automáticamente la semilla local: hay que ejecutar `supabase/seed.sql` si se quiere una demostración compartida.
+`ReportsProvider` ofrece reportes, usuario, perfil demo, estado del backend y acciones. Sin credenciales de Supabase, carga `urbia-cancun:v1` de `localStorage`; si no existe, genera la semilla ficticia con fechas relativas al primer inicio. El perfil elegido se guarda por navegador y da un ID local estable. La ruta de reportar y las acciones de participación comprueban que exista perfil demo. Con credenciales, la app obtiene una sesión anónima de Supabase, lee las tablas compartidas y escucha cambios en tiempo real. El perfil simulado cambia el alias visible, pero **no** el UID anónimo que usa RLS. El modo Supabase no carga automáticamente la semilla local: hay que ejecutar `supabase/seed.sql` si se quiere una demostración compartida.
 
 ## Reglas y análisis
 

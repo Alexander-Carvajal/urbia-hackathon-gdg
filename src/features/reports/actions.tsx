@@ -1,20 +1,25 @@
 import { ShieldCheck, ThumbsUp, Flag } from 'lucide-react'
 import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useToast } from '../../components/ui/Toast'
 import { Modal } from '../../components/ui'
+import { accessUrl } from '../auth/demoSession'
 import type { ObjectionReason, Report } from '../../types'
 import { useReports } from './store'
 
 /** Estado del botón «Yo también lo observé» para el usuario demo actual. */
 export function useCorroboration(report: Report | undefined) {
-  const { confirm, user, hasConfirmed } = useReports()
+  const { confirm, user, hasConfirmed, demoProfile } = useReports()
   const toast = useToast()
-  const own = !!report && report.authorId === user.id
-  const done = !!report && hasConfirmed(report)
+  const navigate = useNavigate()
+  const location = useLocation()
+  const own = !!demoProfile && !!report && report.authorId === user.id
+  const done = !!demoProfile && !!report && hasConfirmed(report)
   const closed = !!report && (report.status === 'resuelto' || report.status === 'descartado')
-  const reason = own ? 'No puedes corroborar tu propio reporte.' : done ? 'Ya registraste tu confirmación en este navegador.' : closed ? 'Este reporte ya está cerrado.' : ''
+  const reason = closed ? 'Este reporte ya está cerrado.' : !demoProfile ? 'Inicia sesión para corroborar.' : own ? 'No puedes corroborar tu propio reporte.' : done ? 'Ya registraste tu confirmación en este navegador.' : ''
   const run = () => {
     if (!report) return
+    if (!demoProfile) { navigate(accessUrl(location.pathname + location.search)); return }
     const res = confirm(report.id)
     if (res === 'ok') toast('Gracias. Registramos tu confirmación (validación comunitaria).')
     else if (res === 'already') toast('Ya habías corroborado este reporte.', 'info')
@@ -46,15 +51,18 @@ const REASONS: { id: ObjectionReason; label: string }[] = [
 ]
 
 export function ObjectionButton({ report }: { report: Report }) {
-  const { object, hasObjected, user } = useReports()
+  const { object, hasObjected, user, demoProfile } = useReports()
   const toast = useToast()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState<ObjectionReason | ''>('')
   const [detail, setDetail] = useState('')
   const [err, setErr] = useState('')
-  const already = hasObjected(report)
-  const own = report.authorId === user.id
+  const already = !!demoProfile && hasObjected(report)
+  const own = !!demoProfile && report.authorId === user.id
   const submit = () => {
+    if (!demoProfile) { setOpen(false); navigate(accessUrl(location.pathname + location.search)); return }
     if (!reason) { setErr('Selecciona un motivo.'); return }
     if (reason === 'otro' && detail.trim().length < 5) { setErr('Describe brevemente el motivo (mínimo 5 caracteres).'); return }
     if (object(report.id, reason, detail)) {
@@ -64,7 +72,7 @@ export function ObjectionButton({ report }: { report: Report }) {
   }
   return (
     <>
-      <button type="button" className="btn btn-secondary" onClick={() => setOpen(true)} disabled={already || own}>
+      <button type="button" className="btn btn-secondary" onClick={() => demoProfile ? setOpen(true) : navigate(accessUrl(location.pathname + location.search))} disabled={already || own}>
         <Flag size={17} aria-hidden="true" /> {already ? 'Objeción enviada' : 'Información incorrecta'}
       </button>
       <Modal open={open} title="Información incorrecta" onClose={() => setOpen(false)}

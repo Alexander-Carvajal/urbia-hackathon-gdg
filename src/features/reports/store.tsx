@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useToast } from '../../components/ui/Toast'
 import { buildSeed } from '../../data/seed'
+import { clearDemoSession, loadDemoSession, resolveDemoUser, saveDemoSession, type DemoProfile } from '../auth/demoSession'
 import { applyRules } from '../../lib/rules'
 import { clearState, loadState, loadUser, newId, saveState, saveUser } from '../../lib/storage'
 import { ensureAuthUser, fetchReports, hasSupabase, insertConfirmation, insertObjection, insertReports, subscribeChanges } from '../../lib/supabase'
@@ -22,7 +23,7 @@ export interface ImportInput extends Omit<NewReportInput, 'photo'> {
   createdAt?: string
 }
 
-export type ConfirmResult = 'ok' | 'already' | 'own' | 'closed' | 'missing'
+export type ConfirmResult = 'ok' | 'already' | 'own' | 'closed' | 'missing' | 'signin'
 
 /** local: solo este navegador · supabase: base de datos compartida */
 export type Backend = { kind: 'local' } | { kind: 'supabase'; status: 'connecting' | 'online' | 'error'; error?: string }
@@ -30,6 +31,9 @@ export type Backend = { kind: 'local' } | { kind: 'supabase'; status: 'connectin
 interface Store {
   reports: Report[]
   user: DemoUser
+  demoProfile: DemoProfile | null
+  signInDemo: (id: string) => boolean
+  signOutDemo: () => void
   persistent: boolean
   backend: Backend
   /** false mientras se cargan los datos remotos */
@@ -56,7 +60,9 @@ function initial(): { reports: Report[]; seededAt: string } {
 
 export function ReportsProvider({ children }: { children: ReactNode }) {
   const toast = useToast()
-  const [user, setUser] = useState(loadUser)
+  const [baseUser, setBaseUser] = useState(loadUser)
+  const [demoProfile, setDemoProfile] = useState(loadDemoSession)
+  const user = useMemo<DemoUser>(() => resolveDemoUser(baseUser, demoProfile, hasSupabase), [baseUser, demoProfile])
   const [state, setState] = useState(initial)
   const [persistent, setPersistent] = useState(true)
   const [backend, setBackend] = useState<Backend>(hasSupabase ? { kind: 'supabase', status: 'connecting' } : { kind: 'local' })
@@ -84,7 +90,7 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
     ensureAuthUser()
       .then((uid) => {
         if (cancelled) return
-        setUser((u) => { const next = { ...u, id: uid }; saveUser(next); return next })
+        setBaseUser((u) => { const next = { ...u, id: uid }; saveUser(next); return next })
         reload()
         unsub = subscribeChanges(reload)
       })
@@ -100,7 +106,16 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
 
   const getReport = useCallback((id: string) => state.reports.find((r) => r.id === id), [state.reports])
 
+  const signInDemo = useCallback((id: string) => {
+    const profile = saveDemoSession(id)
+    if (!profile) return false
+    setDemoProfile(profile)
+    return true
+  }, [])
+  const signOutDemo = useCallback(() => { clearDemoSession(); setDemoProfile(null) }, [])
+
   const addReport = useCallback((input: NewReportInput) => {
+    if (!demoProfile) throw new Error('Inicia una sesión de demostración para publicar.')
     const now = new Date().toISOString()
     const r: Report = {
       id: newId(), ...input, title: input.title.trim(), description: input.description.trim(), reference: input.reference.trim(),
@@ -112,9 +127,10 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, reports: [r, ...s.reports] }))
     remote(() => insertReports([r]))
     return r
-  }, [user, remote])
+  }, [user, demoProfile, remote])
 
   const importReports = useCallback((items: ImportInput[], fileName: string) => {
+    if (!demoProfile) throw new Error('Inicia una sesión de demostración para importar.')
     const now = new Date().toISOString()
     const created: Report[] = items.map((input) => {
       const at = input.createdAt && !Number.isNaN(Date.parse(input.createdAt)) && Date.parse(input.createdAt) <= Date.now() ? new Date(input.createdAt).toISOString() : now
@@ -129,9 +145,10 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, reports: [...created, ...s.reports] }))
     remote(() => insertReports(created))
     return created.length
-  }, [user, remote])
+  }, [user, demoProfile, remote])
 
   const confirm = useCallback((id: string): ConfirmResult => {
+    if (!demoProfile) return 'signin'
     const r = state.reports.find((x) => x.id === id)
     if (!r) return 'missing'
     if (r.authorId === user.id) return 'own'
@@ -147,9 +164,10 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
     }))
     remote(() => insertConfirmation(id, user.alias))
     return 'ok'
-  }, [state.reports, user, remote])
+  }, [state.reports, user, demoProfile, remote])
 
   const object = useCallback((id: string, reason: ObjectionReason, detail: string) => {
+    if (!demoProfile) return false
     const r = state.reports.find((x) => x.id === id)
     if (!r || r.objections.some((o) => o.by === user.id)) return false
     const now = new Date().toISOString()
@@ -164,7 +182,7 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
       }),
     }))
     return true
-  }, [state.reports, user, remote])
+  }, [state.reports, user, demoProfile, remote])
 
   const hasConfirmed = useCallback((r: Report) => r.confirmedBy.includes(user.id), [user])
   const hasObjected = useCallback((r: Report) => r.objections.some((o) => o.by === user.id), [user])
@@ -175,8 +193,8 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
     setState({ reports: buildSeed(), seededAt: new Date().toISOString() })
   }, [reload])
 
-  const value = useMemo<Store>(() => ({ reports: state.reports, user, persistent, backend, ready, reload, getReport, addReport, importReports, confirm, object, hasConfirmed, hasObjected, resetDemo }),
-    [state.reports, user, persistent, backend, ready, reload, getReport, addReport, importReports, confirm, object, hasConfirmed, hasObjected, resetDemo])
+  const value = useMemo<Store>(() => ({ reports: state.reports, user, demoProfile, signInDemo, signOutDemo, persistent, backend, ready, reload, getReport, addReport, importReports, confirm, object, hasConfirmed, hasObjected, resetDemo }),
+    [state.reports, user, demoProfile, signInDemo, signOutDemo, persistent, backend, ready, reload, getReport, addReport, importReports, confirm, object, hasConfirmed, hasObjected, resetDemo])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

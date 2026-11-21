@@ -11,10 +11,17 @@ La interfaz está en español y utiliza rutas con `#`. En una instalación local
 | `#/reportes` | Lista, búsqueda, orden y filtros por estado |
 | `#/reportes/:id` | Detalle, evidencia, corroboraciones, objeciones e historial |
 | `#/reportar` | Asistente para crear un reporte |
+| `#/acceso` | Inicio de sesión simulado y elección de perfil ficticio |
 | `#/analisis` | Conexiones espaciales y temporales; otras áreas se presentan como futuras |
 | `#/avisos` | Avisos externos y pronóstico de lluvia |
 | `#/datos` | Importación y exportación CSV/GeoJSON |
 | `#/perfil` | Alias demo, puntos, niveles, insignias y restablecimiento local |
+
+## Acceso de demostración
+
+El mapa, los reportes, los avisos y las exportaciones se pueden consultar como invitado. Para publicar o importar un reporte, corroborar u objetar, elige un perfil en `#/acceso`. El botón «Continuar con Google» solo abre un selector de tres perfiles ficticios de URBIA; **no contacta Google, no pide correo ni contraseña y no verifica identidades**. La sesión se guarda en este navegador hasta pulsar «Cerrar sesión demo» en el perfil. Salir no borra los reportes.
+
+Si un invitado intenta participar, la app lo lleva a acceso y luego vuelve a la pantalla de origen. No ejecuta automáticamente la acción pendiente. En modo Supabase, los perfiles son alias visuales: las reglas de la base siguen usando la identidad anónima del navegador, incluso si se cambia el perfil ficticio.
 
 ## Reportar
 

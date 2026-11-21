@@ -1,19 +1,23 @@
 import { Download, FileDown, FileJson, FileSpreadsheet, FileUp, Upload } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CategoryTag, Notice, PageHeader } from '../../components/ui'
 import { useToast } from '../../components/ui/Toast'
 import { CATEGORIES, CATEGORY_IDS } from '../../data/categories'
 import { zoneById } from '../../data/zones'
 import { CSV_TEMPLATE, download, parseDocument, toCsv, toGeoJson, type ParseResult } from '../../lib/documents'
 import type { CategoryId } from '../../types'
+import { accessUrl } from '../auth/demoSession'
 import { useReports } from '../reports/store'
 
 const MAX_IMPORT = 500
 
 export function DatosPage() {
-  const { reports, importReports } = useReports()
+  const { reports, importReports, demoProfile } = useReports()
   const toast = useToast()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const loginUrl = accessUrl(location.pathname + location.search)
   const input = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<{ name: string; result: ParseResult } | null>(null)
   const [err, setErr] = useState('')
@@ -32,6 +36,7 @@ export function DatosPage() {
   }
 
   const onFile = async (f: File | undefined) => {
+    if (!demoProfile) { navigate(loginUrl); return }
     if (!f) return
     if (f.size > 5 * 1024 * 1024) { setErr('El archivo supera 5 MB.'); return }
     const text = await f.text()
@@ -40,6 +45,7 @@ export function DatosPage() {
   }
 
   const doImport = () => {
+    if (!demoProfile) { navigate(loginUrl); return }
     if (!file) return
     const items = file.result.items.slice(0, MAX_IMPORT)
     const n = importReports(items, file.name)
@@ -49,6 +55,8 @@ export function DatosPage() {
   }
 
   const stamp = new Date().toISOString().slice(0, 10)
+  const uploadPrompt = <><Upload size={26} className="text-primary" aria-hidden="true" /><span className="text-sm font-semibold">Arrastra un archivo o haz clic para elegirlo</span><span className="text-xs text-muted">.geojson, .json o .csv · máx. 5 MB</span></>
+  const uploadClass = 'flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[#B7D6EE] bg-bg px-4 py-8 text-center hover:bg-soft'
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4 md:px-8 md:py-7">
@@ -57,6 +65,7 @@ export function DatosPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="card flex flex-col gap-4 p-5" aria-labelledby="imp-title">
           <h2 id="imp-title" className="flex items-center gap-2 text-base font-bold"><FileUp size={19} className="text-primary" aria-hidden="true" /> Importar documento</h2>
+          {!demoProfile && <Notice>Para importar reportes, <Link to={loginUrl} className="font-semibold text-primary-strong underline">inicia una sesión de demostración</Link>. La exportación sigue disponible.</Notice>}
           <p className="help">
             Acepta <strong>GeoJSON</strong> (puntos, líneas o polígonos; los polígonos de zonas inundadas se registran en su centro) o <strong>CSV</strong> con columnas
             <code className="mx-1 rounded bg-bg px-1">categoria, titulo, descripcion, referencia, lat, lng, fecha</code>. La categoría acepta «bache», «inundación», «encharcamiento» o «agua».
@@ -68,13 +77,10 @@ export function DatosPage() {
               {CATEGORY_IDS.map((c) => <option key={c} value={c}>{CATEGORIES[c].label}</option>)}
             </select>
           </div>
-          <label htmlFor="doc-file" className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[#B7D6EE] bg-bg px-4 py-8 text-center hover:bg-soft"
-            onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); onFile(e.dataTransfer.files[0]) }}>
-            <Upload size={26} className="text-primary" aria-hidden="true" />
-            <span className="text-sm font-semibold">Arrastra un archivo o haz clic para elegirlo</span>
-            <span className="text-xs text-muted">.geojson, .json o .csv · máx. 5 MB</span>
-          </label>
-          <input ref={input} id="doc-file" type="file" accept=".geojson,.json,.csv,application/geo+json,application/json,text/csv" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} />
+          {demoProfile
+            ? <label htmlFor="doc-file" className={`${uploadClass} cursor-pointer`} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); onFile(e.dataTransfer.files[0]) }}>{uploadPrompt}</label>
+            : <button type="button" className={uploadClass} onClick={() => navigate(loginUrl)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); navigate(loginUrl) }}>{uploadPrompt}</button>}
+          <input ref={input} id="doc-file" type="file" accept=".geojson,.json,.csv,application/geo+json,application/json,text/csv" className="sr-only" disabled={!demoProfile} onChange={(e) => onFile(e.target.files?.[0])} />
           <button type="button" className="btn btn-ghost self-start !min-h-9 !px-2 text-sm" onClick={() => download('plantilla-urbia.csv', CSV_TEMPLATE, 'text/csv;charset=utf-8')}>
             <FileDown size={16} aria-hidden="true" /> Descargar plantilla CSV
           </button>

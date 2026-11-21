@@ -15,6 +15,8 @@ npm run dev
 
 Abre `http://localhost:5173`. Sin variables de entorno, los reportes se guardan en el `localStorage` de ese navegador. El mapa base, los avisos y el clima necesitan internet.
 
+Puedes explorar sin iniciar sesión. Para publicar, importar, corroborar u objetar, usa `#/acceso` y elige un perfil ficticio. El botón «Continuar con Google» es una **simulación local**: no usa Google ni solicita credenciales. La sesión demo permanece en ese navegador hasta cerrar sesión.
+
 Para iniciar también la API de inundaciones, abre otra terminal:
 
 ```bash
@@ -43,6 +45,7 @@ Consulta `http://localhost:8787/api/inundaciones`. Puedes cambiar el puerto con 
 - Avisos de Aguakan y del Gobierno de Quintana Roo, además de lluvia de Open-Meteo.
 - Importación y exportación de CSV y GeoJSON.
 - Modo local o base compartida con Supabase; interfaz instalable como PWA.
+- Acceso demo opcional para explorar y requerido en la interfaz para participar.
 - API HTTP independiente con eventos históricos documentados y contexto meteorológico.
 
 ## Comandos
@@ -55,6 +58,7 @@ Consulta `http://localhost:8787/api/inundaciones`. Puedes cambiar el puerto con 
 | `npm run build:single` | HTML autocontenido en `dist-single/` |
 | `npm run typecheck` | Comprobación de tipos |
 | `npm run api` | API HTTP en el puerto 8787 |
+| `npm run test:auth` | Pruebas de sesión demo, retorno y UID anónimo |
 | `npm run test:api` | Pruebas de adaptadores y rutas de la API |
 | `npm run seed:sql` | Regenera `supabase/seed.sql` con fechas recientes |
 

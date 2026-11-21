@@ -149,6 +149,11 @@
   filter: brightness(1.18) saturate(1.08);
 }
 
+@media (max-width: 400px) {
+  .mobile-header-brand .city-brand { width: 72px; }
+  .mobile-header-brand .brand-wordmark { display: none; }
+}
+
 .city-sidebar {
   padding: 16px 14px 10px;
   gap: 5px;

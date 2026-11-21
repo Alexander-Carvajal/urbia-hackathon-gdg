@@ -1,5 +1,5 @@
 import { Compass } from 'lucide-react'
-import { HashRouter, Link, Route, Routes } from 'react-router-dom'
+import { HashRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { EmptyState } from '../components/ui'
 import { ToastProvider } from '../components/ui/Toast'
 import { AnalysisPage } from '../features/analysis/AnalysisPage'
@@ -7,8 +7,10 @@ import { AvisosPage } from '../features/avisos/AvisosPage'
 import { AvisosProvider } from '../features/avisos/AvisosProvider'
 import { DatosPage } from '../features/datos/DatosPage'
 import { NewReportWizard } from '../features/reports/NewReportWizard'
-import { ReportsProvider } from '../features/reports/store'
+import { ReportsProvider, useReports } from '../features/reports/store'
+import { accessUrl } from '../features/auth/demoSession'
 import { Layout } from './Layout'
+import { AccessPage } from './pages/AccessPage'
 import { HomePage } from './pages/Home'
 import { MapPage } from './pages/MapPage'
 import { ProfilePage } from './pages/ProfilePage'
@@ -18,6 +20,12 @@ import { ScrollToTop } from './ScrollToTop'
 
 function NewReportPage() {
   return <div className="px-4 py-4 md:px-8 md:py-7"><NewReportWizard /></div>
+}
+
+function RequireDemoSession({ children }: { children: React.ReactNode }) {
+  const { demoProfile } = useReports()
+  const location = useLocation()
+  return demoProfile ? children : <Navigate to={accessUrl(location.pathname + location.search)} replace />
 }
 
 function NotFound() {
@@ -38,7 +46,8 @@ export function App() {
               <Route path="mapa" element={<MapPage />} />
               <Route path="reportes" element={<ReportsPage />} />
               <Route path="reportes/:id" element={<ReportDetail />} />
-              <Route path="reportar" element={<NewReportPage />} />
+              <Route path="reportar" element={<RequireDemoSession><NewReportPage /></RequireDemoSession>} />
+              <Route path="acceso" element={<AccessPage />} />
               <Route path="analisis" element={<AnalysisPage />} />
               <Route path="avisos" element={<AvisosPage />} />
               <Route path="datos" element={<DatosPage />} />

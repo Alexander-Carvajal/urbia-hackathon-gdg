@@ -2,6 +2,7 @@ import { BarChart3, Bell, Check, ChevronDown, Cloud, CloudOff, Database, Droplet
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Logo, SidebarArt } from '../components/brand/Brand'
+import { accessUrl } from '../features/auth/demoSession'
 import { useReports } from '../features/reports/store'
 import { RewardWatcher } from '../features/rewards/RewardsUI'
 import { relativeTime } from '../lib/format'
@@ -211,7 +212,7 @@ function BottomNav() {
   ]
   return (
     <>
-      {pathname !== '/reportar' && (
+      {pathname !== '/reportar' && pathname !== '/acceso' && (
         <Link to="/reportar" aria-label="Reportar incidencia" className="fixed bottom-[calc(76px+env(safe-area-inset-bottom))] right-4 z-[1250] flex h-14 w-14 items-center justify-center rounded-full bg-[linear-gradient(180deg,#2C92F3,#0B66D0)] text-white shadow-[0_10px_24px_rgb(11_102_208/0.4)] md:hidden">
           <Plus size={28} strokeWidth={2.6} aria-hidden="true" />
         </Link>
@@ -229,9 +230,10 @@ function BottomNav() {
 }
 
 export function Layout() {
-  const { user, persistent, backend } = useReports()
+  const { user, persistent, backend, demoProfile } = useReports()
   const [drawer, setDrawer] = useState(false)
-  const { pathname } = useLocation()
+  const location = useLocation()
+  const { pathname } = location
   useEffect(() => { setDrawer(false) }, [pathname])
   const initials = user.alias.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 
@@ -242,18 +244,18 @@ export function Layout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-[1300] flex h-[64px] items-center gap-3 border-b border-line bg-white/95 px-3 backdrop-blur md:h-[76px] md:gap-4 md:px-7">
           <button type="button" className="flex h-11 w-11 items-center justify-center rounded-xl text-navy hover:bg-soft md:hidden" aria-label="Abrir menú" aria-haspopup="dialog" aria-expanded={drawer} onClick={() => setDrawer(true)}><Menu size={24} /></button>
-          <div className="md:hidden"><Logo /></div>
+          <div className="mobile-header-brand md:hidden"><Logo /></div>
           <div className="hidden w-full max-w-[600px] md:block"><SearchBox /></div>
           <CitySelector />
           <div className="ml-auto flex items-center gap-2 md:gap-3 xl:ml-0">
             <SyncStatus />
-            {pathname !== '/' && (
+            {pathname !== '/' && pathname !== '/acceso' && (
               <Link to="/reportar" className="btn btn-primary hidden whitespace-nowrap !min-h-12 !rounded-xl !px-5 !text-[15px] md:inline-flex"><Plus size={20} strokeWidth={2.6} aria-hidden="true" /> Reportar incidencia</Link>
             )}
-            <Notifications />
-            <Link to="/perfil" className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-full bg-soft text-sm font-bold text-primary-strong md:flex" aria-label={`Perfil de ${user.alias}`} title={user.alias}>
-              {initials || <User size={20} />}
-            </Link>
+            {demoProfile && <Notifications />}
+            {demoProfile
+              ? <Link to="/perfil" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white md:h-12 md:w-12" style={{ background: demoProfile.color }} aria-label={`Perfil demo de ${user.alias}`} title={`${user.alias} · perfil demo`}>{initials || <User size={20} />}</Link>
+              : pathname !== '/acceso' && <Link to={accessUrl(pathname + location.search)} className="btn btn-outline !min-h-10 !px-3 text-xs sm:text-sm">Ingresar</Link>}
           </div>
         </header>
         {!persistent && <div role="alert" className="bg-[#FFF6EC] px-4 py-2 text-center text-sm text-[#7A3E0E]">Tu navegador no permite guardar datos locales: los cambios se perderán al recargar.</div>}
@@ -267,7 +269,7 @@ export function Layout() {
       </div>
       <MobileDrawer open={drawer} onClose={() => setDrawer(false)} />
       <BottomNav />
-      <RewardWatcher />
+      {demoProfile && <RewardWatcher />}
     </div>
   )
 }
