@@ -1,4 +1,4 @@
-import { BarChart3, Bell, Check, ChevronDown, Cloud, CloudOff, Database, Droplets, FileText, House, Loader2, Map as MapIcon, MapPin, Menu, Plus, RefreshCw, Search, Route as RouteIcon, ShieldCheck, User, X } from 'lucide-react'
+import { BarChart3, Bell, Check, ChevronDown, Cloud, CloudOff, Droplets, FileText, House, Loader2, Map as MapIcon, MapPin, Menu, Plus, RefreshCw, Search, Route as RouteIcon, ShieldCheck, User, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Logo, SidebarArt } from '../components/brand/Brand'
@@ -112,7 +112,6 @@ const MAIN_NAV = [
 ]
 const ENVIRONMENT_NAV = [
   { to: '/avisos', label: 'Avisos y clima', icon: Droplets },
-  { to: '/datos', label: 'Datos abiertos', icon: Database },
 ]
 
 function NavItems({ collapsed = false, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {

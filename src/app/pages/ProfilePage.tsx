@@ -79,7 +79,7 @@ export function ProfilePage() {
       </div>
       <section className="card flex flex-wrap items-center gap-3 p-5">
         <Link to="/analisis" className="btn btn-secondary md:hidden"><Network size={17} aria-hidden="true" /> Análisis y conexiones</Link>
-        <Link to="/datos" className="btn btn-secondary md:hidden"><FileText size={17} aria-hidden="true" /> Importar / exportar datos</Link>
+        <Link to="/datos" className="btn btn-secondary"><FileText size={17} aria-hidden="true" /> Importar o exportar archivos</Link>
         {install && <button type="button" className="btn btn-secondary" onClick={async () => { await install.prompt(); setInstall(null) }}><Download size={17} aria-hidden="true" /> Instalar URBIA</button>}
         {backend.kind === 'local'
           ? <button type="button" className="btn btn-secondary" onClick={() => setConfirmReset(true)}><RotateCcw size={17} aria-hidden="true" /> Restablecer datos de demostración</button>
